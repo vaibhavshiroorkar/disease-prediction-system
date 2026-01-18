@@ -7,12 +7,11 @@ __pycache__/
 env/
 venv/
 .venv/
-*.pkl
 *.csv
 
-# ML artifacts
+# ML artifacts (keep model for deployment)
 ml/synthetic_data.csv
-ml/dengue_model.pkl
+!ml/dengue_model.pkl
 
 # Node
 node_modules/
