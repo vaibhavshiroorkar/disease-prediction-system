@@ -34,6 +34,11 @@ function App() {
         setLoading(true);
         setError(null);
 
+        // Render Free Tier cold start warning
+        const timeoutId = setTimeout(() => {
+            setError("Server is waking up (Render Free Tier)... This may take up to 60s. Please wait!");
+        }, 3000);
+
         try {
             const response = await fetch(`${API_URL}/predict_outbreak`, {
                 method: 'POST',
@@ -43,17 +48,22 @@ function App() {
                 body: JSON.stringify(formData),
             });
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                throw new Error('Prediction failed. Make sure the backend is running.');
+                throw new Error(`Server Error (${response.status}). Check Vercel VITE_API_URL setting.`);
             }
 
             const data = await response.json();
             setPrediction(data);
+            setError(null); // Clear any warning
 
             // Refresh history
             await fetchHistory();
         } catch (err) {
-            setError(err.message);
+            clearTimeout(timeoutId);
+            console.error(err);
+            setError(err.message || 'Connection failed. Is the backend running?');
         } finally {
             setLoading(false);
         }

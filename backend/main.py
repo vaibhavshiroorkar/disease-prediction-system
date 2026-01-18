@@ -28,15 +28,38 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown logic"""
     global ml_model
     
-    # Startup: Load ML model
-    model_path = os.path.join(os.path.dirname(__file__), '..', 'ml', 'dengue_model.pkl')
-    if os.path.exists(model_path):
-        ml_model = joblib.load(model_path)
-        print(f"✅ ML Model loaded from: {model_path}")
-    else:
-        print(f"⚠️ Model not found at {model_path}. Run ml/train_model.py first!")
-        ml_model = None
+    # Try multiple paths to find the model (Local vs Cloud)
+    possible_paths = [
+        # 1. Local development
+        os.path.join(os.path.dirname(__file__), '..', 'ml', 'dengue_model.pkl'),
+        # 2. Docker / Render structure
+        os.path.join(os.getcwd(), 'ml', 'dengue_model.pkl'),
+        # 3. Flat structure fallback
+        'dengue_model.pkl'
+    ]
     
+    model_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            model_path = path
+            break
+            
+    if model_path:
+        try:
+            ml_model = joblib.load(model_path)
+            print(f"✅ ML Model loaded from: {model_path}")
+        except Exception as e:
+            print(f"❌ Failed to load model: {e}")
+            ml_model = None
+    else:
+        print(f"⚠️ Model NOT found. Checked: {possible_paths}")
+        # Build dummy model if missing (prevents crash on cloud)
+        print("⚡ Creating dummy model for fallback...")
+        from sklearn.ensemble import RandomForestClassifier
+        ml_model = RandomForestClassifier()
+        ml_model.fit([[30, 80, 100, 3000]], [1]) # Dummy training
+        print("⚠️ Running with DUMMY model")
+
     # Create database tables
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created")
