@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.pkl
+*.csv
+
+# ML artifacts
+ml/synthetic_data.csv
+ml/dengue_model.pkl
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.log

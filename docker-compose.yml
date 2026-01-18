@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: disease_prediction_db
+    environment:
+      POSTGRES_USER: disease_user
+      POSTGRES_PASSWORD: disease_pass
+      POSTGRES_DB: disease_prediction
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U disease_user -d disease_prediction" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

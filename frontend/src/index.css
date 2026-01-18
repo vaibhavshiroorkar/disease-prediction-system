@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  min-height: 100vh;
+  color: #e2e8f0;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 1rem;
+}
+
+/* Risk Level Badges */
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.risk-low {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.risk-moderate {
+  background: rgba(245, 158, 11, 0.2);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.risk-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Input styling */
+input[type="number"],
+input[type="text"] {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Button styling */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Pulse animation for high risk */
+@keyframes risk-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-risk-pulse {
+  animation: risk-pulse 2s ease-in-out infinite;
+}
