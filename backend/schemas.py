@@ -21,7 +21,8 @@ class PredictionRequest(BaseModel):
                 "temperature": 32.5,
                 "humidity": 85.0,
                 "rainfall": 150.0,
-                "population_density": 6000.0
+                "population_density": 6000.0,
+                "disease": "Dengue"
             }
         }
 
