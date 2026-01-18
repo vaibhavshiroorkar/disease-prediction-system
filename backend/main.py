@@ -57,12 +57,20 @@ async def lifespan(app: FastAPI):
         print("⚡ Creating dummy model for fallback...")
         from sklearn.ensemble import RandomForestClassifier
         ml_model = RandomForestClassifier()
-        ml_model.fit([[30, 80, 100, 3000]], [1]) # Dummy training
+        # Train on all 3 classes to avoid predict_proba errors
+        ml_model.fit([
+            [25, 50, 50, 1000],   # Low risk
+            [30, 70, 100, 3000],  # Moderate risk
+            [35, 90, 200, 8000]   # High risk
+        ], [0, 1, 2])
         print("⚠️ Running with DUMMY model")
 
     # Create database tables
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables created")
+    except Exception as e:
+        print(f"❌ Database error: {e}")
     
     yield
     
@@ -117,55 +125,66 @@ async def predict_outbreak(
     - **rainfall**: Precipitation in mm
     - **population_density**: Population per sq km (optional)
     """
-    if ml_model is None:
-        raise HTTPException(
-            status_code=503, 
-            detail="ML Model not loaded. Please run train_model.py first."
+    try:
+        if ml_model is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="ML Model not loaded. Please run train_model.py first."
+            )
+        
+        # Prepare features
+        features = np.array([[
+            request.temperature,
+            request.humidity,
+            request.rainfall,
+            request.population_density
+        ]])
+        
+        # Make prediction
+        prediction = int(ml_model.predict(features)[0])
+        probabilities = ml_model.predict_proba(features)[0]
+        
+        risk_level = RISK_LABELS.get(prediction, "UNKNOWN")
+        
+        # Handle probabilities safely (in case model has fewer classes)
+        prob_dict = {
+            "low": round(float(probabilities[0]) * 100, 2) if len(probabilities) > 0 else 0,
+            "moderate": round(float(probabilities[1]) * 100, 2) if len(probabilities) > 1 else 0,
+            "high": round(float(probabilities[2]) * 100, 2) if len(probabilities) > 2 else 0
+        }
+        
+        # Save to database
+        db_prediction = OutbreakPrediction(
+            region_name=request.region_name,
+            temperature=request.temperature,
+            humidity=request.humidity,
+            rainfall=request.rainfall,
+            population_density=request.population_density,
+            predicted_risk_level=risk_level,
+            risk_score=prediction
         )
-    
-    # Prepare features
-    features = np.array([[
-        request.temperature,
-        request.humidity,
-        request.rainfall,
-        request.population_density
-    ]])
-    
-    # Make prediction
-    prediction = int(ml_model.predict(features)[0])
-    probabilities = ml_model.predict_proba(features)[0]
-    
-    risk_level = RISK_LABELS[prediction]
-    
-    # Save to database
-    db_prediction = OutbreakPrediction(
-        region_name=request.region_name,
-        temperature=request.temperature,
-        humidity=request.humidity,
-        rainfall=request.rainfall,
-        population_density=request.population_density,
-        predicted_risk_level=risk_level,
-        risk_score=prediction
-    )
-    db.add(db_prediction)
-    db.commit()
-    db.refresh(db_prediction)
-    
-    return PredictionResponse(
-        region_name=request.region_name,
-        temperature=request.temperature,
-        humidity=request.humidity,
-        rainfall=request.rainfall,
-        population_density=request.population_density,
-        predicted_risk_level=risk_level,
-        risk_score=prediction,
-        probabilities={
-            "low": round(float(probabilities[0]) * 100, 2),
-            "moderate": round(float(probabilities[1]) * 100, 2),
-            "high": round(float(probabilities[2]) * 100, 2)
-        },
-        message=RISK_MESSAGES[prediction]
-    )
+        db.add(db_prediction)
+        db.commit()
+        db.refresh(db_prediction)
+        
+        return PredictionResponse(
+            region_name=request.region_name,
+            temperature=request.temperature,
+            humidity=request.humidity,
+            rainfall=request.rainfall,
+            population_density=request.population_density,
+            predicted_risk_level=risk_level,
+            risk_score=prediction,
+            probabilities=prob_dict,
+            message=RISK_MESSAGES.get(prediction, "Unknown risk level")
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Prediction Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 @app.get("/predictions", response_model=PredictionHistoryResponse)
 async def get_predictions(
