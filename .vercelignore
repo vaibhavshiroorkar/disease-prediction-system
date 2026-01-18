@@ -1,0 +1,7 @@
+# Exclude backend and ML directories from Vercel build
+# This prevents Vercel from trying to build Python serverless functions
+backend/
+ml/
+docker-compose.yml
+README.md
+.gitignore
