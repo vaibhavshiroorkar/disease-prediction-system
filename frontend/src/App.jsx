@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Toaster, toast } from 'sonner';
+import { Activity, History, LineChart, AlertTriangle } from 'lucide-react';
 import PredictionForm from './components/PredictionForm';
 import RiskGauge from './components/RiskGauge';
 import HistoryTable from './components/HistoryTable';
@@ -11,7 +14,6 @@ function App() {
     const [prediction, setPrediction] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     // Fetch prediction history on mount
     useEffect(() => {
@@ -32,119 +34,136 @@ function App() {
 
     const handlePredict = async (formData) => {
         setLoading(true);
-        setError(null);
+        const toastId = toast.loading("Analyzing epidemiological data...");
 
         // Render Free Tier cold start warning
         const timeoutId = setTimeout(() => {
-            setError("Server is waking up (Render Free Tier)... This may take up to 60s. Please wait!");
+            toast.info("Server is waking up...", { description: "Render Free Tier may take up to 60s." });
         }, 3000);
 
         try {
             const response = await fetch(`${API_URL}/predict_outbreak`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
 
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                throw new Error(`Server Error (${response.status}). Check Vercel VITE_API_URL setting.`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Server Error (${response.status})`);
             }
 
             const data = await response.json();
             setPrediction(data);
-            setError(null); // Clear any warning
+            toast.success("Prediction Complete", { id: toastId });
 
             // Refresh history
             await fetchHistory();
         } catch (err) {
             clearTimeout(timeoutId);
             console.error(err);
-            setError(err.message || 'Connection failed. Is the backend running?');
+            toast.error("Prediction Failed", {
+                id: toastId,
+                description: err.message || 'Connection failed. Is the backend running?'
+            });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen p-6">
+        <div className="min-h-screen text-slate-200 p-4 md:p-8">
+            <Toaster position="top-right" theme="dark" richColors />
+
             {/* Header */}
-            <header className="max-w-7xl mx-auto mb-8">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
+            <motion.header
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-7xl mx-auto mb-10 text-center md:text-left"
+            >
+                <div className="flex flex-col md:flex-row items-center gap-6 border-b border-slate-800/50 pb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <Activity className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                            Dengue Outbreak Predictor
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-200 to-blue-400 bg-clip-text text-transparent mb-2">
+                            BioGuard AI
                         </h1>
-                        <p className="text-slate-400 text-sm">AI-powered disease outbreak risk assessment</p>
+                        <p className="text-slate-400 text-lg">Advanced Multi-Disease Outbreak Prediction System</p>
                     </div>
                 </div>
-            </header>
+            </motion.header>
 
-            <main className="max-w-7xl mx-auto">
+            <main className="max-w-7xl mx-auto space-y-8">
+
                 {/* Top Section: Form + Risk Gauge */}
-                <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                    {/* Prediction Form */}
-                    <div className="glass-card p-6">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Enter Environmental Data
+                <div className="grid lg:grid-cols-12 gap-8">
+
+                    {/* Prediction Form - Takes up 7 columns */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="lg:col-span-7 glass-card p-6 md:p-8"
+                    >
+                        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-cyan-300">
+                            <AlertTriangle className="w-5 h-5" />
+                            Input Parameters
                         </h2>
                         <PredictionForm onSubmit={handlePredict} loading={loading} />
-                        {error && (
-                            <div className="mt-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-sm">
-                                {error}
-                            </div>
-                        )}
-                    </div>
+                    </motion.div>
 
-                    {/* Risk Gauge */}
-                    <div className="glass-card p-6">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Risk Assessment
+                    {/* Risk Gauge - Takes up 5 columns */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="lg:col-span-5 glass-card p-6 md:p-8 flex flex-col"
+                    >
+                        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-orange-300">
+                            <Activity className="w-5 h-5" />
+                            Risk Analysis
                         </h2>
-                        <RiskGauge prediction={prediction} />
-                    </div>
+                        <div className="flex-1 flex items-center justify-center">
+                            <RiskGauge prediction={prediction} />
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Chart Section */}
-                <div className="glass-card p-6 mb-8">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                        </svg>
-                        Risk Trend Over Time
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="glass-card p-6 md:p-8"
+                >
+                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-emerald-300">
+                        <LineChart className="w-5 h-5" />
+                        Risk Trend Analysis
                     </h2>
                     <RiskChart history={history} />
-                </div>
+                </motion.div>
 
                 {/* History Table */}
-                <div className="glass-card p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Prediction History
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="glass-card p-6 md:p-8"
+                >
+                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-purple-300">
+                        <History className="w-5 h-5" />
+                        Analysis History
                     </h2>
                     <HistoryTable history={history} onRefresh={fetchHistory} />
-                </div>
+                </motion.div>
             </main>
 
             {/* Footer */}
-            <footer className="max-w-7xl mx-auto mt-12 text-center text-slate-500 text-sm">
-                <p>Disease Outbreak Prediction System • Built with FastAPI, React & Machine Learning</p>
+            <footer className="max-w-7xl mx-auto mt-16 text-center border-t border-slate-800/50 pt-8 text-slate-500 text-sm">
+                <p>BioGuard AI • Powered by Random Forest & Open-Meteo • Phase 2 Beta</p>
             </footer>
         </div>
     );
