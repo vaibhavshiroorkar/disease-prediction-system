@@ -4,7 +4,8 @@ import RiskGauge from './components/RiskGauge';
 import HistoryTable from './components/HistoryTable';
 import RiskChart from './components/RiskChart';
 
-const API_URL = 'http://localhost:8000';
+// Use environment variable in production, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
     const [prediction, setPrediction] = useState(null);
