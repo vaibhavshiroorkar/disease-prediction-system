@@ -13,6 +13,7 @@ class PredictionRequest(BaseModel):
     humidity: float = Field(..., ge=0, le=100, description="Humidity percentage")
     rainfall: float = Field(..., ge=0, description="Precipitation in mm")
     population_density: Optional[float] = Field(default=1000.0, ge=0, description="Population per sq km")
+    disease: str = Field(default="Dengue", description="Disease type (Dengue, Malaria, Chikungunya, Zika)")
     
     class Config:
         json_schema_extra = {
