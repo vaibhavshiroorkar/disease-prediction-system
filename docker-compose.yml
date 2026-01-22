@@ -1,20 +1,92 @@
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: disease_prediction_db
+    container_name: biosentinel_db
     environment:
-      POSTGRES_USER: disease_user
-      POSTGRES_PASSWORD: disease_pass
-      POSTGRES_DB: disease_prediction
+      POSTGRES_USER: biosentinel_user
+      POSTGRES_PASSWORD: biosentinel_pass
+      POSTGRES_DB: biosentinel
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U disease_user -d disease_prediction" ]
+      test: [ "CMD-SHELL", "pg_isready -U biosentinel_user -d biosentinel" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Redis Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: biosentinel_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Web Server
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: biosentinel_web
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://biosentinel_user:biosentinel_pass@postgres:5432/biosentinel
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+      - ./ml:/app/ml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: biosentinel_worker
+    environment:
+      - DATABASE_URL=postgresql://biosentinel_user:biosentinel_pass@postgres:5432/biosentinel
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+      - ./ml:/app/ml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A tasks worker --loglevel=info
+
+  # Celery Beat Scheduler (Hourly tasks)
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: biosentinel_beat
+    environment:
+      - DATABASE_URL=postgresql://biosentinel_user:biosentinel_pass@postgres:5432/biosentinel
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+      - ./ml:/app/ml
+    depends_on:
+      - worker
+    command: celery -A tasks beat --loglevel=info
 
 volumes:
   postgres_data:

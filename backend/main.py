@@ -1,96 +1,57 @@
 """
-Disease Outbreak Prediction API
-FastAPI Backend with ML Model Integration
+BioSentinel FastAPI Application
+Main API server with geo status and triage endpoints.
 """
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import joblib
-import numpy as np
-import os
+from sqlalchemy import desc
 from contextlib import asynccontextmanager
+from typing import List, Optional
+from datetime import datetime, timedelta
 
-from database import engine, get_db, Base
-from models import OutbreakPrediction
+from config import settings
+from database import engine, get_db, Base, init_db, seed_regions, Region, RiskSnapshot, ThreatLevel
 from schemas import (
-    PredictionRequest, 
-    PredictionResponse, 
-    PredictionHistoryResponse,
-    PredictionHistoryItem
+    RegionResponse, RegionStatus, GeoStatusResponse,
+    TriageRequest, TriageResponse,
+    RiskSnapshotResponse, TrendDataPoint, TrendResponse,
+    ThreatLevelEnum
 )
 
-# Global model variable
-ml_model = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown logic"""
-    global ml_model, ml_encoder
+    """Startup and shutdown logic."""
+    print("🚀 BioSentinel API starting up...")
     
-    # Try multiple paths to find the model (Local vs Cloud)
-    base_paths = [
-        os.path.join(os.path.dirname(__file__), '..', 'ml'),
-        os.path.join(os.getcwd(), 'ml'),
-        os.getcwd()
-    ]
-    
-    model_path = None
-    encoder_path = None
-    
-    for base in base_paths:
-        m_p = os.path.join(base, 'disease_model.pkl')
-        e_p = os.path.join(base, 'disease_encoder.pkl')
-        if os.path.exists(m_p) and os.path.exists(e_p):
-            model_path = m_p
-            encoder_path = e_p
-            break
-            
-    if model_path:
-        try:
-            ml_model = joblib.load(model_path)
-            ml_encoder = joblib.load(encoder_path)
-            print(f"✅ Multi-Disease Model loaded from: {model_path}")
-        except Exception as e:
-            print(f"❌ Failed to load model: {e}")
-            ml_model = None
-    else:
-        print(f"⚠️ Model NOT found. Checked paths in: {base_paths}")
-        # Build dummy model if missing (prevents crash on cloud)
-        print("⚡ Creating dummy model for fallback...")
-        from sklearn.ensemble import RandomForestClassifier
-        from sklearn.preprocessing import LabelEncoder
-        
-        ml_model = RandomForestClassifier()
-        ml_model.fit([
-            [25, 50, 50, 1000, 0],   # Low risk usage
-            [30, 70, 100, 3000, 1],  # Moderate risk usage
-            [35, 90, 200, 8000, 0]   # High risk usage
-        ], [0, 1, 2])
-        
-        ml_encoder = LabelEncoder()
-        ml_encoder.fit(['Dengue', 'Malaria', 'Chikungunya', 'Zika'])
-        print("⚠️ Running with DUMMY model")
-
-    # Create database tables
+    # Initialize database tables
     try:
-        Base.metadata.create_all(bind=engine)
+        init_db()
         print("✅ Database tables created")
+        
+        # Seed initial regions
+        db = next(get_db())
+        seed_regions(db)
+        db.close()
+        
     except Exception as e:
-        print(f"❌ Database error: {e}")
+        print(f"⚠️ Database initialization warning: {e}")
     
     yield
-    print("🛑 Shutting down...")
+    print("🛑 BioSentinel API shutting down...")
+
 
 # Create FastAPI app
 app = FastAPI(
-    title="Disease Outbreak Prediction API",
-    description="Predict outbreak risk for Dengue, Malaria, Zika, etc.",
-    version="2.0.0",
+    title=settings.api_title,
+    description=settings.api_description,
+    version=settings.api_version,
     lifespan=lifespan
 )
 
-# CORS middleware for frontend communication
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -99,120 +60,273 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Risk level mapping
-RISK_LABELS = {0: "LOW", 1: "MODERATE", 2: "HIGH"}
-RISK_MESSAGES = {
-    0: "Low risk. Monitor local health advisories.",
-    1: "Moderate risk. Preventive measures advised.",
-    2: "High risk! Immediate precautions recommended."
-}
+
+# ============ Health Check ============
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Health check endpoint."""
     return {
         "status": "healthy",
-        "service": "Disease Outbreak Prediction API v2",
-        "supported_diseases": ["Dengue", "Malaria", "Chikungunya", "Zika"]
+        "service": "BioSentinel API",
+        "version": settings.api_version,
+        "description": "Autonomous Epidemiological Surveillance System"
     }
 
-@app.post("/predict_outbreak", response_model=PredictionResponse)
-async def predict_outbreak(
-    request: PredictionRequest,
-    db: Session = Depends(get_db)
-):
-    try:
-        if ml_model is None:
-            raise HTTPException(status_code=503, detail="ML Model not loaded.")
-        
-        # Encode disease
-        try:
-            disease_code = ml_encoder.transform([request.disease])[0]
-        except ValueError:
-            # Fallback for unknown disease -> Default to Dengue (usually 0 or 1)
-            print(f"Unknown disease {request.disease}, defaulting to Dengue")
-            disease_code = ml_encoder.transform(['Dengue'])[0]
 
-        # Prepare features: Temp, Humidity, Rain, Density, DiseaseCode
-        features = np.array([[
-            request.temperature,
-            request.humidity,
-            request.rainfall,
-            request.population_density,
-            disease_code
-        ]])
-        
-        # Make prediction
-        prediction = int(ml_model.predict(features)[0])
-        probabilities = ml_model.predict_proba(features)[0]
-        
-        risk_level = RISK_LABELS.get(prediction, "UNKNOWN")
-        
-        prob_dict = {
-            "low": round(float(probabilities[0]) * 100, 1) if len(probabilities) > 0 else 0,
-            "moderate": round(float(probabilities[1]) * 100, 1) if len(probabilities) > 1 else 0,
-            "high": round(float(probabilities[2]) * 100, 1) if len(probabilities) > 2 else 0
-        }
-        
-        # Save to database (Note: DB model might need 'disease' column update later)
-        # For now, we save it but if the DB schema isn't updated, we might need a migration.
-        # However, to avoid DB migration complexity in this session, we will likely skip saving 'disease' 
-        # to DB unless user asked for it, or we rely on 'region_name' to store 'Mumbai (Dengue)'.
-        # Let's append disease to region_name to hack it in without schema migration!
-        
-        db_prediction = OutbreakPrediction(
-            region_name=f"{request.region_name} ({request.disease})", 
-            temperature=request.temperature,
-            humidity=request.humidity,
-            rainfall=request.rainfall,
-            population_density=request.population_density,
-            predicted_risk_level=risk_level,
-            risk_score=prediction
-        )
-        db.add(db_prediction)
-        db.commit()
-        db.refresh(db_prediction)
-        
-        return PredictionResponse(
-            region_name=request.region_name,
-            temperature=request.temperature,
-            humidity=request.humidity,
-            rainfall=request.rainfall,
-            population_density=request.population_density,
-            predicted_risk_level=risk_level,
-            risk_score=prediction,
-            probabilities=prob_dict,
-            message=RISK_MESSAGES.get(prediction, "Unknown risk")
-        )
-    except Exception as e:
-        print(f"❌ Prediction Error: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+@app.get("/health")
+async def health_check():
+    """Detailed health check."""
+    return {
+        "status": "ok",
+        "database": "connected",
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
-@app.get("/predictions", response_model=PredictionHistoryResponse)
-async def get_predictions(limit: int = 50, db: Session = Depends(get_db)):
-    predictions = db.query(OutbreakPrediction)\
-        .order_by(OutbreakPrediction.timestamp.desc())\
-        .limit(limit)\
-        .all()
-    return PredictionHistoryResponse(
-        total=len(predictions),
-        predictions=[PredictionHistoryItem.model_validate(p) for p in predictions]
+
+# ============ Geo Status Endpoints ============
+
+@app.get("/api/geo/status", response_model=GeoStatusResponse)
+async def get_geo_status(db: Session = Depends(get_db)):
+    """
+    Get current threat status for all monitored regions.
+    Returns latest risk snapshot for each region, optimized for map display.
+    """
+    regions = db.query(Region).all()
+    region_statuses = []
+    last_update = None
+    
+    for region in regions:
+        # Get latest snapshot for this region
+        latest_snapshot = (
+            db.query(RiskSnapshot)
+            .filter(RiskSnapshot.region_id == region.id)
+            .order_by(desc(RiskSnapshot.timestamp))
+            .first()
+        )
+        
+        if latest_snapshot:
+            threat_level = ThreatLevelEnum(latest_snapshot.final_threat_level.value)
+            weather_risk = latest_snapshot.weather_risk_score
+            news_risk = latest_snapshot.news_sentiment_score
+            last_updated = latest_snapshot.timestamp
+            
+            if last_update is None or latest_snapshot.timestamp > last_update:
+                last_update = latest_snapshot.timestamp
+        else:
+            # No data yet - default to LOW
+            threat_level = ThreatLevelEnum.LOW
+            weather_risk = 0.0
+            news_risk = 0.0
+            last_updated = None
+        
+        region_statuses.append(RegionStatus(
+            id=region.id,
+            name=region.name,
+            latitude=region.latitude,
+            longitude=region.longitude,
+            threat_level=threat_level,
+            weather_risk=weather_risk,
+            news_risk=news_risk,
+            last_updated=last_updated
+        ))
+    
+    return GeoStatusResponse(
+        regions=region_statuses,
+        last_pipeline_run=last_update
     )
 
-@app.get("/stats")
-async def get_stats(db: Session = Depends(get_db)):
-    from sqlalchemy import func
-    total = db.query(func.count(OutbreakPrediction.id)).scalar()
-    risk_counts = db.query(
-        OutbreakPrediction.predicted_risk_level,
-        func.count(OutbreakPrediction.id)
-    ).group_by(OutbreakPrediction.predicted_risk_level).all()
+
+@app.get("/api/regions", response_model=List[RegionResponse])
+async def get_regions(db: Session = Depends(get_db)):
+    """Get all monitored regions."""
+    regions = db.query(Region).all()
+    return regions
+
+
+# ============ Triage Endpoint ============
+
+# Symptom profiles for context-aware decision making
+DENGUE_SYMPTOMS = {"fever", "headache", "joint pain", "muscle pain", "rash", "fatigue", "nausea"}
+MALARIA_SYMPTOMS = {"fever", "chills", "sweating", "headache", "fatigue", "nausea", "vomiting"}
+COMMON_VIRAL = {"fever", "cough", "sore throat", "runny nose", "body aches"}
+
+
+def analyze_symptom_match(symptoms: List[str]) -> dict:
+    """Analyze symptoms for disease pattern matching."""
+    symptoms_set = set(s.lower().strip() for s in symptoms)
+    
+    dengue_match = len(symptoms_set & DENGUE_SYMPTOMS) / len(DENGUE_SYMPTOMS)
+    malaria_match = len(symptoms_set & MALARIA_SYMPTOMS) / len(MALARIA_SYMPTOMS)
+    
     return {
-        "total_predictions": total,
-        "risk_distribution": {level: count for level, count in risk_counts}
+        "dengue_match": round(dengue_match, 2),
+        "malaria_match": round(malaria_match, 2),
+        "is_concerning": dengue_match > 0.4 or malaria_match > 0.4
     }
+
+
+@app.post("/api/triage/check", response_model=TriageResponse)
+async def check_symptoms(request: TriageRequest, db: Session = Depends(get_db)):
+    """
+    Context-aware symptom triage.
+    Combines user symptoms with regional threat level for intelligent recommendation.
+    """
+    # Get region
+    region = db.query(Region).filter(Region.id == request.region_id).first()
+    if not region:
+        raise HTTPException(status_code=404, detail="Region not found")
+    
+    # Get latest risk snapshot
+    latest_snapshot = (
+        db.query(RiskSnapshot)
+        .filter(RiskSnapshot.region_id == region.id)
+        .order_by(desc(RiskSnapshot.timestamp))
+        .first()
+    )
+    
+    if latest_snapshot:
+        regional_threat = ThreatLevelEnum(latest_snapshot.final_threat_level.value)
+    else:
+        regional_threat = ThreatLevelEnum.LOW
+    
+    # Analyze symptom patterns
+    symptom_analysis = analyze_symptom_match(request.symptoms)
+    
+    # Context-aware decision logic
+    context_warning = None
+    
+    if regional_threat == ThreatLevelEnum.HIGH and symptom_analysis["is_concerning"]:
+        # HIGH regional risk + concerning symptoms = URGENT
+        urgency_level = "URGENT"
+        recommendation = (
+            "⚠️ URGENT: Your symptoms match patterns of vector-borne diseases, "
+            "and your region is currently experiencing HIGH outbreak risk. "
+            "Please seek medical attention immediately. Visit a hospital or clinic today."
+        )
+        context_warning = (
+            f"🚨 {region.name} is currently under HIGH outbreak alert. "
+            "Multiple fever cases have been reported in your area."
+        )
+    elif regional_threat == ThreatLevelEnum.HIGH or symptom_analysis["is_concerning"]:
+        # Either high risk OR concerning symptoms = ELEVATED
+        urgency_level = "ELEVATED"
+        if regional_threat == ThreatLevelEnum.HIGH:
+            recommendation = (
+                "⚡ Your region has elevated disease activity. "
+                "Monitor symptoms closely and consult a doctor within 24-48 hours. "
+                "Stay hydrated and avoid mosquito exposure."
+            )
+            context_warning = f"📊 {region.name} is experiencing increased outbreak risk."
+        else:
+            recommendation = (
+                "Your symptoms warrant medical attention. "
+                "Please consult a healthcare provider within 24-48 hours. "
+                "Monitor for worsening symptoms such as high fever or severe pain."
+            )
+    else:
+        # Low risk + mild symptoms = ROUTINE
+        urgency_level = "ROUTINE"
+        recommendation = (
+            "Your symptoms appear mild. Rest, stay hydrated, and monitor your condition. "
+            "If symptoms persist beyond 3 days or worsen, please consult a doctor."
+        )
+    
+    return TriageResponse(
+        region_name=region.name,
+        regional_threat_level=regional_threat,
+        symptoms_reported=request.symptoms,
+        urgency_level=urgency_level,
+        recommendation=recommendation,
+        context_warning=context_warning
+    )
+
+
+# ============ Trend Data Endpoint ============
+
+@app.get("/api/trends/{region_id}", response_model=TrendResponse)
+async def get_region_trends(
+    region_id: int, 
+    hours: int = 72,
+    db: Session = Depends(get_db)
+):
+    """
+    Get historical risk data for a region.
+    Used for time-series chart visualization.
+    """
+    region = db.query(Region).filter(Region.id == region_id).first()
+    if not region:
+        raise HTTPException(status_code=404, detail="Region not found")
+    
+    # Get snapshots from last N hours
+    since = datetime.utcnow() - timedelta(hours=hours)
+    snapshots = (
+        db.query(RiskSnapshot)
+        .filter(RiskSnapshot.region_id == region_id)
+        .filter(RiskSnapshot.timestamp >= since)
+        .order_by(RiskSnapshot.timestamp)
+        .all()
+    )
+    
+    data_points = [
+        TrendDataPoint(
+            timestamp=s.timestamp,
+            weather_risk=s.weather_risk_score,
+            news_risk=s.news_sentiment_score,
+            threat_level=ThreatLevelEnum(s.final_threat_level.value)
+        )
+        for s in snapshots
+    ]
+    
+    return TrendResponse(
+        region_id=region.id,
+        region_name=region.name,
+        data_points=data_points
+    )
+
+
+# ============ Admin/Debug Endpoints ============
+
+@app.post("/api/admin/trigger-pipeline")
+async def trigger_pipeline():
+    """Manually trigger the risk assessment pipeline (for testing)."""
+    from tasks import update_regional_risks
+    
+    try:
+        result = update_regional_risks.delay()
+        return {
+            "status": "triggered",
+            "task_id": result.id,
+            "message": "Pipeline task queued. Check worker logs for progress."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to trigger pipeline: {str(e)}")
+
+
+@app.get("/api/admin/snapshots")
+async def get_recent_snapshots(limit: int = 20, db: Session = Depends(get_db)):
+    """Get recent risk snapshots for debugging."""
+    snapshots = (
+        db.query(RiskSnapshot)
+        .order_by(desc(RiskSnapshot.timestamp))
+        .limit(limit)
+        .all()
+    )
+    
+    return [
+        {
+            "id": s.id,
+            "region_id": s.region_id,
+            "timestamp": s.timestamp.isoformat(),
+            "temp_c": s.temp_c,
+            "humidity_pct": s.humidity_pct,
+            "weather_risk": s.weather_risk_score,
+            "news_risk": s.news_sentiment_score,
+            "threat_level": s.final_threat_level.value
+        }
+        for s in snapshots
+    ]
+
 
 if __name__ == "__main__":
     import uvicorn

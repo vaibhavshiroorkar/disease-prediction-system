@@ -1,77 +1,68 @@
-# 🦟 Dengue Outbreak Prediction System
+# BioSentinel - Autonomous Epidemiological Surveillance System
 
-AI-powered dashboard to predict Dengue outbreaks based on environmental factors using Machine Learning.
+Real-time disease outbreak monitoring and context-aware health triage powered by ML.
 
-![Tech Stack](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
-![Scikit-Learn](https://img.shields.io/badge/ScikitLearn-F7931E?style=flat&logo=scikit-learn&logoColor=white)
+![BioSentinel](https://img.shields.io/badge/BioSentinel-v1.0-green)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.109-teal)
+![React](https://img.shields.io/badge/React-18-blue)
 
-## 🎯 Features
+## 🎯 Overview
 
-- **ML-Powered Predictions**: RandomForestClassifier trained on weather/disease correlation data
-- **Real-time Risk Assessment**: Get instant outbreak risk levels (Low/Moderate/High)
-- **Interactive Dashboard**: Modern React UI with glassmorphism design
-- **Historical Tracking**: View past predictions with trend visualization
-- **RESTful API**: FastAPI backend with automatic OpenAPI documentation
+BioSentinel is an automated system that monitors environmental and social signals in real-time to predict disease outbreaks (Dengue, Malaria, etc.) in specific geographic regions. It provides context-aware symptom triage for users based on their location's current threat level.
 
-## 🏗️ Project Structure
+### Two Core Loops
+
+**Loop A: Background Intelligence Pipeline (Autonomous)**
+- Celery worker runs hourly
+- Fetches weather data and news headlines
+- Runs ML weather risk prediction
+- Performs NLP sentiment analysis on news
+- Stores aggregated threat level in PostgreSQL
+
+**Loop B: User-Facing Triage (Interactive)**
+- User enters symptoms on frontend
+- Backend checks user's region threat level
+- Returns context-aware health recommendation
+
+## 🏗️ Architecture
 
 ```
-disease-prediction-system/
-├── ml/
-│   ├── train_model.py      # Model training script
-│   ├── synthetic_data.csv  # Generated training data
-│   └── dengue_model.pkl    # Trained model
-├── backend/
-│   ├── main.py             # FastAPI application
-│   ├── database.py         # SQLAlchemy config
-│   ├── models.py           # Database models
-│   ├── schemas.py          # Pydantic schemas
-│   └── requirements.txt    # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── App.jsx         # Main app
-│   │   └── index.css       # Tailwind styles
-│   └── package.json        # Node dependencies
-└── docker-compose.yml      # PostgreSQL container
+┌─────────────────────────────────────────────────────────────────┐
+│                      DOCKER COMPOSE                              │
+├───────────┬───────────┬───────────┬───────────┬────────────────┤
+│  FastAPI  │   Celery  │   Celery  │   Redis   │   PostgreSQL   │
+│   (web)   │  (worker) │   (beat)  │  (broker) │      (db)      │
+│  :8000    │           │           │   :6379   │     :5432      │
+└───────────┴───────────┴───────────┴───────────┴────────────────┘
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Docker Desktop
+- Docker & Docker Compose
+- Node.js 18+ (for frontend development)
+- Python 3.11+ (for local development)
 
-### Step 1: Start PostgreSQL Database
+### 1. Start the Backend Stack
 
 ```bash
-docker-compose up -d
+# Start all services (PostgreSQL, Redis, FastAPI, Celery)
+docker-compose up --build
+
+# Verify services are running
+docker-compose ps
 ```
 
-### Step 2: Train the ML Model
+### 2. Train the ML Model (Optional)
 
 ```bash
+# Inside backend container or locally
 cd ml
-pip install numpy pandas scikit-learn joblib
-python train_model.py
+python train_weather_model.py
 ```
 
-### Step 3: Start the Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-The API will be available at `http://localhost:8000`
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### Step 4: Start the Frontend
+### 3. Start the Frontend
 
 ```bash
 cd frontend
@@ -79,74 +70,139 @@ npm install
 npm run dev
 ```
 
-The dashboard will be available at `http://localhost:5173`
+Open http://localhost:5173 to view the dashboard.
 
-## 📊 API Endpoints
+### 4. Trigger Initial Data Pipeline
+
+```bash
+# Via API
+curl -X POST http://localhost:8000/api/admin/trigger-pipeline
+
+# Or via Celery directly
+docker-compose exec worker celery -A tasks call tasks.update_regional_risks
+```
+
+## 📡 API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/predict_outbreak` | Make a prediction |
-| GET | `/predictions` | Get prediction history |
-| DELETE | `/predictions/{id}` | Delete a prediction |
-| GET | `/stats` | Get statistics |
+| GET | `/` | Health check |
+| GET | `/api/geo/status` | Get all regions with current threat levels |
+| POST | `/api/triage/check` | Context-aware symptom analysis |
+| GET | `/api/trends/{region_id}` | Historical risk data for charts |
+| GET | `/api/regions` | List all monitored regions |
+| POST | `/api/admin/trigger-pipeline` | Manually trigger risk update |
 
-### Example Request
+### Example: Symptom Triage
 
 ```bash
-curl -X POST http://localhost:8000/predict_outbreak \
+curl -X POST http://localhost:8000/api/triage/check \
   -H "Content-Type: application/json" \
   -d '{
-    "region_name": "Mumbai",
-    "temperature": 32,
-    "humidity": 85,
-    "rainfall": 150,
-    "population_density": 6000
+    "region_id": 1,
+    "symptoms": ["fever", "joint pain", "headache"]
   }'
 ```
 
-### Example Response
+## 🗂️ Project Structure
 
-```json
-{
-  "region_name": "Mumbai",
-  "temperature": 32,
-  "humidity": 85,
-  "rainfall": 150,
-  "population_density": 6000,
-  "predicted_risk_level": "HIGH",
-  "risk_score": 2,
-  "probabilities": {
-    "low": 5.5,
-    "moderate": 22.3,
-    "high": 72.2
-  },
-  "message": "High risk alert! Immediate action recommended."
-}
+```
+disease-prediction-system/
+├── backend/
+│   ├── main.py          # FastAPI application
+│   ├── database.py      # SQLAlchemy models
+│   ├── tasks.py         # Celery worker tasks
+│   ├── schemas.py       # Pydantic schemas
+│   ├── config.py        # Configuration
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── components/
+│   │   │   ├── ThreatMap.jsx     # react-leaflet map
+│   │   │   ├── SymptomModal.jsx  # Triage form
+│   │   │   ├── TrendChart.jsx    # recharts visualization
+│   │   │   └── StatusPanel.jsx   # Region list
+│   │   └── index.css
+│   ├── package.json
+│   └── vite.config.js
+├── ml/
+│   ├── train_weather_model.py    # Model training script
+│   ├── nlp_analyzer.py           # News sentiment analysis
+│   └── weather_model.pkl         # Trained model
+├── docker-compose.yml
+└── README.md
 ```
 
-## 🧠 ML Model Logic
+## 🧠 ML Pipeline
 
-The prediction model considers:
+### Weather Risk Model
+- **Algorithm**: RandomForestClassifier
+- **Features**: Temperature (°C), Humidity (%)
+- **Output**: Risk level (LOW, MODERATE, HIGH)
 
-| Factor | High Risk Condition |
-|--------|-------------------|
-| Temperature | 25-35°C (ideal for mosquitoes) |
-| Humidity | ≥80% |
-| Rainfall | 100-200mm (standing water) |
-| Population Density | ≥5000/km² |
+### News Sentiment Analyzer
+- **Method**: Keyword-based NLP
+- **Trigger Words**: outbreak, epidemic, surge, hospitals, fever, warning...
+- **Output**: Sentiment score (0.0 - 1.0)
 
-## 🎨 Screenshots
+### Score Aggregation
+```python
+final_score = (0.7 * weather_risk) + (0.3 * news_risk)
+```
 
-The dashboard features:
-- Modern dark theme with glassmorphism
-- Color-coded risk cards (Green/Yellow/Red)
-- Interactive charts with Recharts
-- Responsive design
+## 🎨 Frontend Features
+
+- **Interactive Map**: react-leaflet with pulsating threat markers
+- **Symptom Triage**: Context-aware health recommendations
+- **Trend Charts**: Historical risk visualization with recharts
+- **Real-time Updates**: Auto-refresh every 5 minutes
+
+## 🐳 Docker Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| web | 8000 | FastAPI application |
+| worker | - | Celery task worker |
+| beat | - | Celery scheduler |
+| redis | 6379 | Message broker |
+| postgres | 5432 | Database |
+
+## 📊 Database Schema
+
+### Region
+```sql
+id          INTEGER PRIMARY KEY
+name        VARCHAR(100) UNIQUE
+latitude    FLOAT
+longitude   FLOAT
+```
+
+### RiskSnapshot
+```sql
+id                   INTEGER PRIMARY KEY
+region_id            INTEGER FOREIGN KEY
+timestamp            DATETIME
+temp_c               FLOAT
+humidity_pct         FLOAT
+weather_risk_score   FLOAT (0.0-1.0)
+news_sentiment_score FLOAT (0.0-1.0)
+final_threat_level   ENUM (LOW, MODERATE, HIGH)
+```
+
+## 🔧 Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| DATABASE_URL | postgresql://... | PostgreSQL connection |
+| REDIS_URL | redis://localhost:6379/0 | Redis connection |
+| VITE_API_URL | http://localhost:8000 | Frontend API URL |
 
 ## 📝 License
 
-MIT License - feel free to use for educational purposes!
+MIT License
 
 ---
 
-Built with ❤️ for Disease Prevention
+Built with ❤️ for public health surveillance
