@@ -2,14 +2,13 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./ml/models:/app/../ml/models
     environment:
-      - ML_MODELS_DIR=/app/../ml/models
+      - ML_MODELS_DIR=/ml/models
     restart: unless-stopped
 
   frontend:
