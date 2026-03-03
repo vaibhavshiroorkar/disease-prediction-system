@@ -1,133 +1,235 @@
 """
-BioSentinel Weather Risk Model Training
-Trains a RandomForestClassifier on synthetic weather/risk data.
+Disease Prediction System — Weather-Based Disease Risk Model Training
+Predicts risk of vector-borne diseases (Dengue, Malaria, Chikungunya)
+based on weather conditions and geographic/seasonal factors.
 """
 
+import os
+import json
+import pickle
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-import joblib
-import os
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.multioutput import MultiOutputClassifier
+import warnings
+warnings.filterwarnings("ignore")
 
 
-def generate_synthetic_data(n_samples: int = 5000) -> pd.DataFrame:
-    """
-    Generate synthetic training data based on epidemiological patterns.
-    
-    High risk conditions (dengue/malaria favorable):
-    - Temperature: 25-35°C (optimal mosquito breeding)
-    - Humidity: 70-95% (high moisture)
-    
-    Low risk conditions:
-    - Temperature: <20°C or >40°C (unfavorable for mosquitoes)
-    - Humidity: <50% (too dry)
-    """
+# Risk profiles: how weather conditions affect each disease
+DISEASE_WEATHER_PROFILES = {
+    "dengue": {
+        "temp_range": (25, 35),      # Aedes mosquitoes thrive
+        "humidity_min": 60,
+        "rainfall_range": (100, 300), # Standing water for breeding
+        "peak_months": [6, 7, 8, 9, 10, 11],  # Monsoon & post-monsoon
+    },
+    "malaria": {
+        "temp_range": (20, 33),      # Anopheles mosquitoes
+        "humidity_min": 55,
+        "rainfall_range": (80, 400),
+        "peak_months": [7, 8, 9, 10, 11],
+    },
+    "chikungunya": {
+        "temp_range": (26, 37),      # Similar to dengue
+        "humidity_min": 65,
+        "rainfall_range": (100, 350),
+        "peak_months": [7, 8, 9, 10],
+    },
+}
+
+REGIONS = {
+    "tropical": {"base_temp": 30, "base_humidity": 75, "base_rainfall": 200},
+    "subtropical": {"base_temp": 25, "base_humidity": 65, "base_rainfall": 120},
+    "temperate": {"base_temp": 18, "base_humidity": 55, "base_rainfall": 80},
+    "arid": {"base_temp": 35, "base_humidity": 30, "base_rainfall": 20},
+    "mediterranean": {"base_temp": 22, "base_humidity": 50, "base_rainfall": 50},
+}
+
+
+def calculate_disease_risk(temp, humidity, rainfall, month, region_type):
+    """Calculate risk level for each disease based on conditions."""
+    risks = {}
+
+    for disease, profile in DISEASE_WEATHER_PROFILES.items():
+        score = 0.0
+
+        # Temperature factor
+        t_min, t_max = profile["temp_range"]
+        if t_min <= temp <= t_max:
+            # Peak at center of range
+            center = (t_min + t_max) / 2
+            score += 1.0 - abs(temp - center) / (t_max - t_min)
+        elif temp > t_max:
+            score += max(0, 0.3 - (temp - t_max) * 0.05)
+
+        # Humidity factor
+        if humidity >= profile["humidity_min"]:
+            score += min(1.0, (humidity - profile["humidity_min"]) / 30)
+
+        # Rainfall factor
+        r_min, r_max = profile["rainfall_range"]
+        if r_min <= rainfall <= r_max:
+            score += 0.8
+        elif rainfall > r_max:
+            score += 0.4  # Too much can wash away breeding sites
+        elif rainfall > r_min * 0.5:
+            score += 0.3
+
+        # Seasonal factor
+        if month in profile["peak_months"]:
+            score += 0.8
+        elif month in [(m - 1) % 12 or 12 for m in profile["peak_months"][:2]]:
+            score += 0.3
+
+        # Region factor
+        if region_type in ["tropical", "subtropical"]:
+            score += 0.5
+        elif region_type == "temperate":
+            score -= 0.3
+
+        risks[disease] = 1 if score > 2.0 else 0
+
+    return risks
+
+
+def generate_weather_data(n: int = 5000) -> pd.DataFrame:
+    """Generate synthetic weather-disease dataset."""
     np.random.seed(42)
-    
-    data = []
-    
-    # Generate LOW risk samples (40% of data)
-    n_low = int(n_samples * 0.4)
-    for _ in range(n_low):
-        temp = np.random.choice([
-            np.random.uniform(10, 22),   # Cold
-            np.random.uniform(38, 45),   # Too hot
-        ])
-        humidity = np.random.uniform(20, 55)
-        data.append([temp, humidity, 0])  # 0 = LOW
-    
-    # Generate MODERATE risk samples (35% of data)
-    n_moderate = int(n_samples * 0.35)
-    for _ in range(n_moderate):
-        temp = np.random.uniform(22, 28)
-        humidity = np.random.uniform(55, 75)
-        data.append([temp, humidity, 1])  # 1 = MODERATE
-    
-    # Generate HIGH risk samples (25% of data)
-    n_high = n_samples - n_low - n_moderate
-    for _ in range(n_high):
-        temp = np.random.uniform(28, 36)
-        humidity = np.random.uniform(75, 98)
-        data.append([temp, humidity, 2])  # 2 = HIGH
-    
-    df = pd.DataFrame(data, columns=['temperature_c', 'humidity_pct', 'risk_level'])
-    return df.sample(frac=1).reset_index(drop=True)  # Shuffle
+    rows = []
+
+    region_types = list(REGIONS.keys())
+
+    for _ in range(n):
+        region = np.random.choice(region_types)
+        base = REGIONS[region]
+        month = np.random.randint(1, 13)
+
+        # Seasonal variation
+        seasonal_factor = np.sin((month - 1) * np.pi / 6)  # peaks mid-year
+
+        temp = base["base_temp"] + seasonal_factor * 5 + np.random.normal(0, 3)
+        humidity = base["base_humidity"] + seasonal_factor * 10 + np.random.normal(0, 8)
+        rainfall = max(0, base["base_rainfall"] + seasonal_factor * 80 + np.random.normal(0, 30))
+
+        temp = np.clip(temp, 5, 45)
+        humidity = np.clip(humidity, 10, 100)
+        rainfall = np.clip(rainfall, 0, 500)
+
+        risks = calculate_disease_risk(temp, humidity, rainfall, month, region)
+
+        # Add noise
+        for disease in risks:
+            if np.random.random() < 0.05:
+                risks[disease] = 1 - risks[disease]
+
+        region_encoded = region_types.index(region)
+
+        rows.append({
+            "temperature": round(temp, 1),
+            "humidity": round(humidity, 1),
+            "rainfall": round(rainfall, 1),
+            "month": month,
+            "region_type": region_encoded,
+            "dengue_risk": risks["dengue"],
+            "malaria_risk": risks["malaria"],
+            "chikungunya_risk": risks["chikungunya"],
+        })
+
+    return pd.DataFrame(rows)
 
 
 def train_model():
-    """Train and save the weather risk prediction model."""
-    print("🔬 BioSentinel Weather Risk Model Training")
-    print("=" * 50)
-    
-    # Generate training data
-    print("\n1️⃣ Generating synthetic training data...")
-    df = generate_synthetic_data(5000)
-    print(f"   Generated {len(df)} samples")
-    print(f"   Risk distribution:\n{df['risk_level'].value_counts().sort_index()}")
-    
-    # Prepare features and labels
-    X = df[['temperature_c', 'humidity_pct']].values
-    y = df['risk_level'].values
-    
-    # Split data
+    """Train weather-based disease risk model."""
+    print("=" * 60)
+    print("  Weather-Based Disease Risk — Model Training")
+    print("=" * 60)
+
+    # Generate data
+    print("\n[1/4] Generating weather-disease dataset...")
+    df = generate_weather_data(8000)
+    print(f"  - Dataset shape: {df.shape}")
+    print(f"  - Dengue positives:      {df['dengue_risk'].mean():.2%}")
+    print(f"  - Malaria positives:     {df['malaria_risk'].mean():.2%}")
+    print(f"  - Chikungunya positives: {df['chikungunya_risk'].mean():.2%}")
+
+    # Prepare features
+    feature_cols = ["temperature", "humidity", "rainfall", "month", "region_type"]
+    target_cols = ["dengue_risk", "malaria_risk", "chikungunya_risk"]
+
+    X = df[feature_cols].values
+    y = df[target_cols].values
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X_scaled, y, test_size=0.2, random_state=42
     )
-    print(f"\n2️⃣ Split: {len(X_train)} train, {len(X_test)} test samples")
-    
-    # Train RandomForest
-    print("\n3️⃣ Training RandomForestClassifier...")
-    model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=10,
-        min_samples_split=5,
-        min_samples_leaf=2,
-        random_state=42,
-        n_jobs=-1
+
+    # Train multi-output Random Forest
+    print("\n[2/4] Training multi-output Random Forest...")
+    rf = MultiOutputClassifier(
+        RandomForestClassifier(n_estimators=150, max_depth=12, random_state=42, n_jobs=-1)
     )
-    model.fit(X_train, y_train)
-    
-    # Evaluate
-    print("\n4️⃣ Model Evaluation:")
-    y_pred = model.predict(X_test)
-    
-    print("\nClassification Report:")
-    print(classification_report(y_test, y_pred, target_names=['LOW', 'MODERATE', 'HIGH']))
-    
-    print("\nConfusion Matrix:")
-    print(confusion_matrix(y_test, y_pred))
-    
-    # Feature importance
-    print("\n5️⃣ Feature Importance:")
-    for name, importance in zip(['temperature_c', 'humidity_pct'], model.feature_importances_):
-        print(f"   {name}: {importance:.3f}")
-    
-    # Save model
-    output_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(output_dir, 'weather_model.pkl')
-    
-    joblib.dump(model, model_path)
-    print(f"\n✅ Model saved to: {model_path}")
-    
-    # Test predictions
-    print("\n6️⃣ Sample Predictions:")
-    test_cases = [
-        [15, 40],   # Cold, dry -> LOW
-        [25, 65],   # Warm, moderate humidity -> MODERATE
-        [32, 85],   # Hot, humid -> HIGH
-        [28, 78],   # Border case
-    ]
-    
-    risk_labels = {0: 'LOW', 1: 'MODERATE', 2: 'HIGH'}
-    for temp, humidity in test_cases:
-        pred = model.predict([[temp, humidity]])[0]
-        proba = model.predict_proba([[temp, humidity]])[0]
-        print(f"   Temp={temp}°C, Humidity={humidity}% -> {risk_labels[pred]} "
-              f"(probabilities: L={proba[0]:.2f}, M={proba[1]:.2f}, H={proba[2]:.2f})")
-    
-    return model
+    rf.fit(X_train, y_train)
+    rf_pred = rf.predict(X_test)
+
+    for i, disease in enumerate(target_cols):
+        acc = accuracy_score(y_test[:, i], rf_pred[:, i])
+        print(f"  - {disease:25s} Accuracy: {acc:.4f}")
+
+    # Train multi-output Gradient Boosting
+    print("\n[3/4] Training multi-output Gradient Boosting...")
+    gb = MultiOutputClassifier(
+        GradientBoostingClassifier(n_estimators=100, max_depth=6, random_state=42)
+    )
+    gb.fit(X_train, y_train)
+    gb_pred = gb.predict(X_test)
+
+    for i, disease in enumerate(target_cols):
+        acc = accuracy_score(y_test[:, i], gb_pred[:, i])
+        print(f"  - {disease:25s} Accuracy: {acc:.4f}")
+
+    # Save
+    print("\n[4/4] Saving model artifacts...")
+    os.makedirs("models", exist_ok=True)
+
+    artifacts = {
+        "rf_model": rf,
+        "gb_model": gb,
+        "scaler": scaler,
+        "feature_names": feature_cols,
+        "target_names": target_cols,
+        "region_types": list(REGIONS.keys()),
+        "disease_profiles": DISEASE_WEATHER_PROFILES,
+    }
+
+    with open("models/weather_model.pkl", "wb") as f:
+        pickle.dump(artifacts, f)
+
+    # Metadata
+    meta = {
+        "features": feature_cols,
+        "targets": target_cols,
+        "region_types": list(REGIONS.keys()),
+        "disease_profiles": {
+            k: {
+                "temp_range": v["temp_range"],
+                "humidity_min": v["humidity_min"],
+                "rainfall_range": v["rainfall_range"],
+                "peak_months": v["peak_months"],
+            }
+            for k, v in DISEASE_WEATHER_PROFILES.items()
+        },
+    }
+    with open("models/weather_metadata.json", "w") as f:
+        json.dump(meta, f, indent=2)
+
+    print(f"\n[OK] Model saved to models/weather_model.pkl")
+    print(f"[OK] Metadata saved to models/weather_metadata.json")
 
 
 if __name__ == "__main__":

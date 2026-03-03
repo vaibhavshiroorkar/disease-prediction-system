@@ -1,0 +1,78 @@
+{
+  "diabetes": {
+    "features": [
+      "pregnancies",
+      "glucose",
+      "blood_pressure",
+      "skin_thickness",
+      "insulin",
+      "bmi",
+      "diabetes_pedigree",
+      "age"
+    ],
+    "rf_accuracy": 0.905,
+    "rf_auc": 0.9618,
+    "feature_importances": {
+      "glucose": 0.3831,
+      "bmi": 0.1836,
+      "age": 0.1358,
+      "diabetes_pedigree": 0.1029,
+      "insulin": 0.0632,
+      "blood_pressure": 0.0508,
+      "skin_thickness": 0.0503,
+      "pregnancies": 0.0303
+    }
+  },
+  "heart_disease": {
+    "features": [
+      "age",
+      "sex",
+      "chest_pain_type",
+      "resting_bp",
+      "cholesterol",
+      "fasting_blood_sugar",
+      "resting_ecg",
+      "max_heart_rate",
+      "exercise_angina",
+      "oldpeak",
+      "slope"
+    ],
+    "rf_accuracy": 0.8883,
+    "rf_auc": 0.9634,
+    "feature_importances": {
+      "exercise_angina": 0.2411,
+      "age": 0.1896,
+      "cholesterol": 0.1471,
+      "oldpeak": 0.1183,
+      "max_heart_rate": 0.1023,
+      "resting_bp": 0.0873,
+      "chest_pain_type": 0.0678,
+      "resting_ecg": 0.0142,
+      "slope": 0.013,
+      "sex": 0.0105,
+      "fasting_blood_sugar": 0.0088
+    }
+  },
+  "stroke": {
+    "features": [
+      "age",
+      "sex",
+      "hypertension",
+      "heart_disease",
+      "avg_glucose_level",
+      "bmi",
+      "smoking_status"
+    ],
+    "rf_accuracy": 0.9467,
+    "rf_auc": 0.9816,
+    "feature_importances": {
+      "hypertension": 0.2986,
+      "age": 0.2458,
+      "bmi": 0.1275,
+      "avg_glucose_level": 0.119,
+      "heart_disease": 0.102,
+      "smoking_status": 0.0936,
+      "sex": 0.0135
+    }
+  }
+}

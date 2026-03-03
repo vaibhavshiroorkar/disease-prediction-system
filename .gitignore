@@ -3,20 +3,20 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-env/
-venv/
-.venv/
-*.csv
-
-# ML artifacts (keep model for deployment)
-ml/synthetic_data.csv
-!ml/dengue_model.pkl
-
-# Node
-node_modules/
+*.egg-info/
 dist/
-.cache/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+*.pkl
+*.joblib
+
+# Environment
+.env
+.env.local
 
 # IDE
 .vscode/
@@ -24,11 +24,20 @@ dist/
 *.swp
 *.swo
 
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# ML artifacts
+ml/models/*.pkl
+ml/models/*.joblib
+ml/data/*.csv
+!ml/data/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db
 
-# Environment
-.env
-.env.local
+# Logs
 *.log

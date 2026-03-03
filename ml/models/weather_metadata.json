@@ -1,0 +1,77 @@
+{
+  "features": [
+    "temperature",
+    "humidity",
+    "rainfall",
+    "month",
+    "region_type"
+  ],
+  "targets": [
+    "dengue_risk",
+    "malaria_risk",
+    "chikungunya_risk"
+  ],
+  "region_types": [
+    "tropical",
+    "subtropical",
+    "temperate",
+    "arid",
+    "mediterranean"
+  ],
+  "disease_profiles": {
+    "dengue": {
+      "temp_range": [
+        25,
+        35
+      ],
+      "humidity_min": 60,
+      "rainfall_range": [
+        100,
+        300
+      ],
+      "peak_months": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "malaria": {
+      "temp_range": [
+        20,
+        33
+      ],
+      "humidity_min": 55,
+      "rainfall_range": [
+        80,
+        400
+      ],
+      "peak_months": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "chikungunya": {
+      "temp_range": [
+        26,
+        37
+      ],
+      "humidity_min": 65,
+      "rainfall_range": [
+        100,
+        350
+      ],
+      "peak_months": [
+        7,
+        8,
+        9,
+        10
+      ]
+    }
+  }
+}

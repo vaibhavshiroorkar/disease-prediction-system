@@ -1,57 +1,81 @@
-import { Github, Twitter, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, Github, Heart } from 'lucide-react';
 
-function Footer() {
-    return (
-        <footer className="bg-dark-900 border-t border-dark-600 pt-16 pb-8">
-            <div className="container mx-auto px-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-                    <div className="col-span-1 md:col-span-2">
-                        <h3 className="text-2xl font-bold text-white mb-4">BioSentinel</h3>
-                        <p className="text-zinc-400 leading-relaxed max-w-md">
-                            An autonomous epidemiological surveillance system leveraging machine learning
-                            and real-time data to predict disease outbreaks and provide context-aware
-                            health triage.
-                        </p>
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-white mb-4">Platform</h4>
-                        <ul className="space-y-2 text-zinc-400">
-                            <li><a href="/surveillance" className="hover:text-sentinel-400 transition-colors">Surveillance Map</a></li>
-                            <li><a href="/prediction" className="hover:text-sentinel-400 transition-colors">Symptom Checker</a></li>
-                            <li><a href="/about" className="hover:text-sentinel-400 transition-colors">Methodology</a></li>
-                            <li><a href="#" className="hover:text-sentinel-400 transition-colors">API Docs</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 className="font-semibold text-white mb-4">Connect</h4>
-                        <div className="flex gap-4">
-                            <a href="#" className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-zinc-400 hover:bg-sentinel-600 hover:text-white transition-all">
-                                <Github className="w-5 h-5" />
-                            </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-zinc-400 hover:bg-blue-500 hover:text-white transition-all">
-                                <Twitter className="w-5 h-5" />
-                            </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-zinc-400 hover:bg-purple-500 hover:text-white transition-all">
-                                <Mail className="w-5 h-5" />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="border-t border-dark-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-zinc-500 text-sm">
-                        © {new Date().getFullYear()} BioSentinel. Open source implementation.
-                    </p>
-                    <div className="flex gap-6 text-sm text-zinc-500">
-                        <a href="#" className="hover:text-white">Privacy Policy</a>
-                        <a href="#" className="hover:text-white">Terms of Service</a>
-                    </div>
-                </div>
+export default function Footer() {
+  return (
+    <footer className="bg-gray-900 text-gray-400 hidden md:block" role="contentinfo">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-primary-600 rounded-xl">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">
+                Medi<span className="text-primary-400">Predict</span>
+              </span>
             </div>
-        </footer>
-    );
-}
+            <p className="text-sm leading-relaxed">
+              An AI-powered health assistant that helps you understand symptoms,
+              evaluate risk factors, and stay aware of weather-related diseases.
+              Built as a learning project to explore ML in healthcare.
+            </p>
+          </div>
 
-export default Footer;
+          {/* Quick Links */}
+          <nav aria-label="Footer navigation">
+            <h3 className="text-white font-semibold mb-4">Explore</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/symptoms" className="hover:text-white transition-colors">Check your symptoms</Link></li>
+              <li><Link to="/risk" className="hover:text-white transition-colors">Assess health risk</Link></li>
+              <li><Link to="/weather" className="hover:text-white transition-colors">Weather disease alerts</Link></li>
+              <li><Link to="/diseases" className="hover:text-white transition-colors">Disease encyclopedia</Link></li>
+              <li><Link to="/dashboard" className="hover:text-white transition-colors">Dashboard & history</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">How it works</Link></li>
+            </ul>
+          </nav>
+
+          {/* Built With */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">Built With</h3>
+            <ul className="space-y-2 text-sm">
+              <li>React 18 + TailwindCSS</li>
+              <li>FastAPI + Python</li>
+              <li>scikit-learn (RF + Gradient Boosting)</li>
+              <li>Docker + Vite</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm flex items-center gap-1">
+            Built with <Heart className="h-3.5 w-3.5 text-red-400" aria-hidden="true" /> for learning.
+            &copy; {new Date().getFullYear()} MediPredict AI.
+          </p>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors flex items-center gap-1.5 text-sm"
+              aria-label="View source code on GitHub"
+            >
+              <Github className="h-4 w-4" aria-hidden="true" /> Source Code
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="border-t border-gray-800 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <p className="text-xs text-gray-500 text-center">
+            This is an educational project, not a medical tool. It should never replace
+            professional medical advice. If you have real health concerns, please see a doctor.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
