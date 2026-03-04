@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
  * Button that exports a given element to PDF using html2canvas + jsPDF.
  * Pass a ref to the DOM element you want to capture.
  */
-export default function ExportButton({ targetRef, filename = 'medipredict-results', label = 'Export PDF' }) {
+export default function ExportButton({ targetRef, filename = 'disease-prediction-results', label = 'Export PDF' }) {
   const [exporting, setExporting] = useState(false);
 
   const handleExport = useCallback(async () => {

@@ -78,14 +78,14 @@ export default function About() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Helmet>
-        <title>About | MediPredict AI</title>
-        <meta name="description" content="Learn about how MediPredict AI uses machine learning to predict diseases from symptoms, health metrics, and weather data." />
+        <title>About | Disease Prediction System</title>
+        <meta name="description" content="Learn about how Disease Prediction System uses machine learning to predict diseases from symptoms, health metrics, and weather data." />
       </Helmet>
 
       {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
-          The Story Behind <span className="gradient-text">MediPredict AI</span>
+          The Story Behind <span className="gradient-text">Disease Prediction System</span>
         </h1>
         <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
           This project started with a simple question: <em>"Can machine learning
@@ -202,7 +202,7 @@ export default function About() {
           <div>
             <h3 className="text-lg font-bold text-amber-900 mb-2">A word about responsibility</h3>
             <p className="text-sm text-amber-800 leading-relaxed">
-              MediPredict AI is a learning project built to demonstrate machine learning in healthcare.
+              Disease Prediction System is a learning project built to demonstrate machine learning in healthcare.
               It is <strong>not</strong> a medical device, and should never be used for actual diagnosis or treatment.
               The models are trained on synthetic data designed to mirror real clinical distributions --
               they're meant to teach ML concepts, not practice medicine.

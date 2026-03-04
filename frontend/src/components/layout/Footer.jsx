@@ -51,7 +51,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm flex items-center gap-1">
             Built with <Heart className="h-3.5 w-3.5 text-red-400" aria-hidden="true" /> for learning.
-            &copy; {new Date().getFullYear()} MediPredict AI.
+            &copy; {new Date().getFullYear()} Disease Prediction System.
           </p>
           <div className="flex items-center gap-4">
             <a

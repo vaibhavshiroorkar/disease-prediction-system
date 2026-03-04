@@ -239,7 +239,7 @@ export default function RiskAssessment() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Helmet>
-        <title>Health Risk Assessment | MediPredict AI</title>
+        <title>Health Risk Assessment | Disease Prediction System</title>
         <meta name="description" content="Assess your risk for diabetes, heart disease, and stroke using AI-powered models." />
       </Helmet>
 

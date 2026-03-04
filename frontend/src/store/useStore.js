@@ -24,7 +24,7 @@ const useStore = create(
         })),
     }),
     {
-      name: 'medipredict-storage',
+      name: 'disease-prediction-storage',
       version: 1,
     }
   )

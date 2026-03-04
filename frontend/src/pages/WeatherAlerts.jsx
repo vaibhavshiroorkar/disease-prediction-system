@@ -156,7 +156,7 @@ export default function WeatherAlerts() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Helmet>
-        <title>Weather Disease Alerts | MediPredict AI</title>
+        <title>Weather Disease Alerts | Disease Prediction System</title>
         <meta name="description" content="Check how weather conditions affect disease risk in your area with AI-powered analysis." />
       </Helmet>
 

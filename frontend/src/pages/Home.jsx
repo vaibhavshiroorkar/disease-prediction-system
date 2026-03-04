@@ -99,7 +99,7 @@ export default function Home() {
   return (
     <div>
       <Helmet>
-        <title>MediPredict AI — AI-Powered Disease Prediction</title>
+        <title>Disease Prediction System — AI-Powered Disease Prediction</title>
         <meta name="description" content="AI-powered health assistant: symptom checker, risk assessment, and weather-based disease alerts." />
       </Helmet>
 
@@ -118,7 +118,7 @@ export default function Home() {
               <span className="text-primary-200">answered by AI</span>
             </h1>
             <p className="text-lg sm:text-xl text-primary-100 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Not sure what's going on with your body? MediPredict helps you make sense
+              Not sure what's going on with your body? Disease Prediction System helps you make sense
               of symptoms, understand your risk factors, and stay informed about
               weather-related diseases -- all in one place.
             </p>

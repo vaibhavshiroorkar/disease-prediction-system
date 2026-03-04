@@ -12,10 +12,8 @@ services:
       # ML model path (matches what's baked into the Docker image)
       - key: ML_MODELS_DIR
         value: /ml/models
-      # Add your Vercel frontend URL so CORS allows it, e.g.:
-      #   https://your-app.vercel.app
       - key: CORS_ORIGINS
-        sync: false
+        value: https://diseasepredictionsystem.vercel.app
       # Optional: weather API key
       - key: WEATHER_API_KEY
         sync: false

@@ -55,12 +55,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" aria-label="MediPredict AI Home">
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Disease Prediction System Home">
             <div className="p-2 bg-primary-600 rounded-xl group-hover:bg-primary-700 transition-colors">
               <Activity className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">
-              Medi<span className="text-primary-600">Predict</span>
+              Disease<span className="text-primary-600">Predict</span>
             </span>
           </Link>
 

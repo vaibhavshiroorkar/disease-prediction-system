@@ -154,7 +154,7 @@ export default function SymptomChecker() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Helmet>
-        <title>Symptom Checker — MediPredict AI</title>
+        <title>Symptom Checker — Disease Prediction System</title>
         <meta name="description" content="AI-powered symptom checker. Select symptoms and get instant disease predictions with confidence scores." />
       </Helmet>
 

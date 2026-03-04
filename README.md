@@ -1,4 +1,4 @@
-# MediPredict AI
+# Disease Prediction System
 
 ### An AI-powered health companion for symptoms, risk, and weather-driven disease alerts
 
@@ -27,7 +27,7 @@ The secondary motivation was purely technical: I wanted to see what a real ML sy
 
 ## What it does
 
-MediPredict approaches disease prediction from three different angles.
+Disease Prediction System approaches disease prediction from three different angles.
 
 ### Symptom Checker
 
@@ -254,7 +254,7 @@ Healthcare access isn't equal everywhere. Millions of people lack timely access 
 
 ## What This Project Does
 
-MediPredict AI is a **full-stack machine learning application** that tackles disease prediction from three different angles:
+Disease Prediction System is a **full-stack machine learning application** that tackles disease prediction from three different angles:
 
 ### 1. Symptom-Based Disease Prediction
 
