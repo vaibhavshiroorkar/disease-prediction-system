@@ -1,97 +1,105 @@
 # Aetheris
 
-A small workspace for asking calm questions about your health.
+Health can be overwhelming, and searching for symptoms online often leads to panic. Aetheris is built to be an alternative: a calm, quiet place to explore your health questions without the noise. 
 
-It does three things: a symptom checker, a few risk calculators (diabetes, heart, stroke), and a weather-driven outbreak forecaster for mosquito-borne disease. Each prediction comes with the reasons behind it.
+It carefully looks at three things:
+- **Your symptoms:** A gentle checker that explains *why* it thinks you might have a certain condition.
+- **Your risks:** Simple calculators for assessing the likelihood of diabetes, heart conditions, or stroke.
+- **Your environment:** A weather-driven forecaster looking out for mosquito-borne outbreaks in your area.
 
-It is not a doctor. It is a quieter first step.
+It is not a doctor, and it will never replace one. It is simply a quieter first step to help you understand your body.
 
-## The pieces
+---
 
-- `frontend/` &nbsp; the website. Vite, React, Tailwind. Lives on Vercel.
-- `backend/` &nbsp; the inference API. FastAPI on Python. Lives on a HuggingFace Space.
-- `ml/` &nbsp; training scripts. Run once, locally, to bake the .joblib models the API serves.
-- `supabase/` &nbsp; one SQL file. Run it in your Supabase project to set up auth and history.
+## How it's put together
 
-## Running it locally
+We split Aetheris into a few manageable pieces so it's easy to read and change:
 
-You need Python 3.11+ and Node 18+.
+- `frontend/`: The face of the app (built with Vite, React, and Tailwind).
+- `backend/`: The thinking part. A simple Python API that serves our models.
+- `ml/`: The learning part. Scripts that teach the models how to predict based on data.
+- `supabase/`: The memory. A single file to set up secure accounts and save your history.
+
+## Running Aetheris at home
+
+You're welcome to run this on your own computer. You'll just need Python 3.11+ and Node 18+ installed.
+
+### 1. Teach the models
+First, we need to train the models so they know what to look for. Do this once:
 
 ```bash
-# 1. Train the models, once
 cd ml
 pip install -r requirements.txt
 python scripts/generate_data.py
 python scripts/train_all.py
+```
 
-# 2. Move them into the API and start it
+### 2. Start the API
+Move the newly trained models to the backend, then wake it up:
+
+```bash
 cp -r models data ../backend/
 cd ../backend
 pip install -r requirements.txt
 uvicorn app.main:app --port 7860
+```
 
-# 3. Start the frontend
+### 3. Start the interface
+Finally, let's start the website itself. 
+
+```bash
 cd ../frontend
-cp .env.example .env       # leave Supabase blank to run in demo mode
+cp .env.example .env       # Leaving the database blank runs it in a safe, memoryless 'demo mode'
 npm install
 npm run dev
 ```
 
-Open `localhost:5173` and that's the whole thing.
+Open `localhost:5173` in your browser. Take a breath. It's ready.
 
-## What I'll need from you to ship it
+---
 
-Four accounts. All free tiers are fine.
+## Sharing it with the world
 
-### 1. Supabase (database + auth)
+If you want to host Aetheris for others, you'll need three free accounts to bring it to life.
 
-1. Create a project at supabase.com.
-2. Open the SQL editor. Paste in `supabase/schema.sql` and run it.
-3. **Project Settings → API**, grab two values:
-   - Project URL `→ VITE_SUPABASE_URL`
-   - `anon` `public` key `→ VITE_SUPABASE_ANON_KEY`
-4. **Authentication → URL Configuration**: add your Vercel domain to the allow list.
-5. (Optional) **Authentication → Providers → Google**: paste in a Google OAuth client ID if you want one-tap sign-in.
+### 1. The Memory (Supabase)
+For saving user histories safely:
+1. Make a project at [supabase.com](https://supabase.com).
+2. In the SQL editor, paste and run the contents of `supabase/schema.sql`.
+3. Go to **Project Settings → API** and take note of your **Project URL** (`VITE_SUPABASE_URL`) and **anon public key** (`VITE_SUPABASE_ANON_KEY`).
+4. **Authentication → URL Configuration**: Add your website domain to the allow list.
+5. (*Optional*) Enable Google in **Authentication → Providers** if you want one-tap sign-in.
 
-If you skip Supabase entirely, the app runs in demo mode. Predictions still work, but history and accounts are off.
+*(You can skip this entirely if you just want a demo version that doesn't remember past sessions).*
 
-### 2. HuggingFace (inference API)
+### 2. The Brain (HuggingFace)
+For running our models safely in the cloud:
+1. Create a new Space on HuggingFace (choose **Docker** for the SDK).
+2. Clone the Space's git repository locally.
+3. Copy everything from our `backend/` folder (including the `models/` and `data/` you generated) into your Space, and push.
+4. Your endpoint (`VITE_ML_API_URL`) will be `https://<user>-<space>.hf.space`. 
 
-1. New Space, **SDK = Docker**, name it whatever you like.
-2. Clone the Space's git repo locally.
-3. Copy everything in `backend/` into it (including the populated `models/` and `data/` folders), then push.
-4. The first build takes a few minutes. After that, your endpoint is `https://<user>-<space>.hf.space`.
-5. That's your `VITE_ML_API_URL`.
+*(If you want zero cold starts instead of HuggingFace's sleep mode, Render or Railway both work beautifully using the same `backend/Dockerfile`).*
 
-If you want zero cold starts, Render or Railway both work for ~$5/month with the same `backend/Dockerfile`. HuggingFace is free but sleeps after a while.
+### 3. The Face (Vercel)
+For hosting the website:
+1. Import the repository into Vercel and tell it the root directory is `frontend/`.
+2. Give it the links to the Brain and the Memory inside the Environment Variables settings:
+   - `VITE_ML_API_URL`
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Hit deploy.
 
-### 3. Vercel (frontend)
+---
 
-1. Import the repo, set **root directory** to `frontend/`.
-2. Set three environment variables:
-   - `VITE_ML_API_URL` from step 2
-   - `VITE_SUPABASE_URL` from step 1
-   - `VITE_SUPABASE_ANON_KEY` from step 1
-3. Deploy.
+## A note of care regarding the models
 
-### 4. The .env file (local dev)
+Please remember: the predictions here are based on synthetic data. They are soft votes from Random Forest and Gradient Boosting algorithms, trained on publicly available datasets (like Pima for diabetes, Cleveland for heart conditions). 
 
-Inside `frontend/`, your `.env` should look like:
+They are wonderful for learning, for intuition, and for getting a general sense of things. **They are not clinical-grade.** They should never be the last word. Use Aetheris to ask questions, but rely on human doctors for answers. 
 
-```
-VITE_ML_API_URL=http://127.0.0.1:7860
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
-For demo mode just leave the Supabase lines blank.
-
-## A small note on the models
-
-Each prediction is a soft vote between a Random Forest and a Gradient Boosting classifier. They were trained on synthetic data shaped after the Pima diabetes set, the Cleveland heart set, the Kaggle stroke set, and a curated symptom-disease table. They are good for learning, demos, and intuition. They are not clinical-grade and they should never be the last word.
-
-The training pipeline is reproducible. Run `python scripts/train_all.py` and you get a `summary.json` with the test metrics next to the saved models.
+The training pipeline is fully transparent. Run `python scripts/train_all.py` at any time to see a `summary.json` of the test metrics next to the saved models.
 
 ## License
 
-MIT.
+Released under the [MIT License](LICENSE). Feel free to use and adapt it kindly.
