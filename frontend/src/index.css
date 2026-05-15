@@ -3,178 +3,76 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
+  html, body, #root { height: 100%; }
   body {
-    @apply bg-stone-50 text-gray-800 font-sans antialiased;
+    background-color: #F2EFE7;
+    color: #1F2024;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-
-  /* Better focus styles for accessibility */
-  *:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary-500;
+  h1, h2, h3, h4 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.012em;
+    font-weight: 500;
   }
+  ::selection { background: #C7D2E2; color: #0F0F0F; }
 }
 
 @layer components {
-  .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-md;
+  .paper-card {
+    @apply bg-white border border-paper-300 rounded-xl shadow-soft;
   }
-
-  .card-glass {
-    @apply backdrop-blur-lg bg-white/80 rounded-2xl shadow-sm border border-white/20 p-6;
+  .paper-card-soft {
+    @apply bg-paper-50 border border-paper-300/70 rounded-xl;
   }
-
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold 
-           hover:bg-primary-700 active:bg-primary-800 
-           transition-all duration-200 shadow-sm hover:shadow-md
-           disabled:opacity-50 disabled:cursor-not-allowed
-           active:scale-[0.98];
+    @apply btn bg-ink-900 text-paper-50 hover:bg-sage-500;
   }
-
   .btn-secondary {
-    @apply bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold 
-           hover:bg-gray-200 active:bg-gray-300 
-           transition-all duration-200
-           active:scale-[0.98];
+    @apply btn bg-sage-500 text-paper-50 hover:bg-sage-600;
   }
-
-  .btn-danger {
-    @apply bg-red-500 text-white px-6 py-3 rounded-xl font-semibold 
-           hover:bg-red-600 active:bg-red-700 
-           transition-all duration-200
-           active:scale-[0.98];
+  .btn-ghost {
+    @apply btn bg-paper-100 hover:bg-paper-200 text-ink-800 border border-paper-300;
   }
-
-  .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-           focus:border-primary-500 focus:ring-2 focus:ring-primary-100
-           outline-none transition-all duration-200
-           placeholder:text-gray-400
-           text-gray-800
-           hover:border-gray-300;
+  .btn-outline {
+    @apply btn border border-ink-800 text-ink-800 hover:bg-ink-900 hover:text-paper-50;
   }
-
-  .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  .btn-link {
+    @apply inline-flex items-center gap-1.5 text-sm text-ink-900 underline underline-offset-4 decoration-ink-300 hover:decoration-ink-900 transition;
   }
-
-  .badge-low {
-    @apply badge bg-green-100 text-green-700;
+  .input {
+    @apply w-full rounded-lg bg-paper-50 border border-paper-300 px-4 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 outline-none transition focus:border-sage-500 focus:bg-white focus:ring-2 focus:ring-sage-500/15;
   }
-
-  .badge-moderate {
-    @apply badge bg-yellow-100 text-yellow-700;
+  .label {
+    @apply block text-xs font-medium text-ink-600 mb-1.5;
   }
-
-  .badge-high {
-    @apply badge bg-red-100 text-red-700;
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-paper-50 border border-paper-300 px-3 py-1 text-xs text-ink-700 transition hover:border-ink-300 hover:bg-paper-100;
   }
-
-  .badge-very-high {
-    @apply badge bg-red-200 text-red-800;
+  .chip-active {
+    @apply chip bg-sage-50 border-sage-100 text-sage-600 hover:bg-sage-50 hover:border-sage-300;
   }
-
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-accent-600;
+  .kicker {
+    @apply text-[11px] uppercase tracking-[0.2em] text-sage-500 font-medium;
   }
-
-  .section-title {
-    @apply text-3xl font-bold text-gray-900 mb-2;
+  .ruled {
+    @apply border-t border-paper-300;
   }
-
-  .section-subtitle {
-    @apply text-lg text-gray-500 mb-8;
-  }
-
-  /* Skeleton loading animation */
-  .skeleton {
-    @apply bg-gray-200 rounded-lg animate-pulse;
-  }
-
-  .skeleton-text {
-    @apply skeleton h-4 w-full;
-  }
-
-  .skeleton-text-sm {
-    @apply skeleton h-3 w-3/4;
-  }
-
-  .skeleton-circle {
-    @apply skeleton rounded-full;
-  }
-
-  .skeleton-card {
-    @apply card animate-pulse;
+  .serif-italic {
+    font-family: 'Newsreader', Georgia, serif;
+    font-style: italic;
+    font-optical-sizing: auto;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
-}
-
-/* React Select overrides */
-.symptom-select__control {
-  @apply !rounded-xl !border-gray-200 !min-h-[48px] !shadow-none !bg-white;
-}
-
-.symptom-select__control--is-focused {
-  @apply !border-primary-500 !ring-2 !ring-primary-100 !shadow-none;
-}
-
-.symptom-select__menu {
-  @apply !bg-white !border !rounded-xl !shadow-lg;
-}
-
-.symptom-select__option--is-focused {
-  @apply !bg-primary-50;
-}
-
-.symptom-select__option--is-selected {
-  @apply !bg-primary-600;
-}
-
-.symptom-select__multi-value {
-  @apply !bg-primary-100 !rounded-lg;
-}
-
-.symptom-select__multi-value__label {
-  @apply !text-primary-700;
-}
-
-.symptom-select__multi-value__remove:hover {
-  @apply !bg-primary-200 !text-primary-800;
-}
-
-.symptom-select__placeholder {
-  @apply !text-gray-400;
-}
-
-/* Counter animation */
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Print styles for PDF export */
-@media print {
-  .no-print { display: none !important; }
-  .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
-  body { background: white !important; }
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(31,32,36,0.15); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(31,32,36,0.30); }

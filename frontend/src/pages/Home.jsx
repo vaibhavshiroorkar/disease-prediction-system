@@ -1,301 +1,249 @@
-import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import {
-  Stethoscope,
-  HeartPulse,
-  CloudRain,
-  Brain,
-  Shield,
-  Zap,
-  ArrowRight,
-  Activity,
-  Search,
-  BarChart3,
-  CheckCircle2,
-  Users,
-  Clock,
-  Sparkles,
-  BookOpen,
-} from 'lucide-react';
-import StatCounter from '../components/ui/StatCounter';
-
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-};
-
-const features = [
-  {
-    icon: Stethoscope,
-    title: 'Symptom Checker',
-    subtitle: 'Feeling unwell?',
-    description:
-      "Tell us what you're experiencing, and our AI will help you understand what might be going on. No medical jargon needed -- just pick your symptoms from a simple list.",
-    link: '/symptoms',
-    lightColor: 'bg-blue-50',
-    textColor: 'text-blue-600',
-    borderColor: 'border-blue-100',
-    cta: 'Check Symptoms',
-  },
-  {
-    icon: HeartPulse,
-    title: 'Health Risk Assessment',
-    subtitle: 'Know your numbers',
-    description:
-      'Enter basic health metrics like blood pressure, BMI, or glucose levels, and get a personalized risk breakdown for diabetes, heart disease, and stroke.',
-    link: '/risk',
-    lightColor: 'bg-rose-50',
-    textColor: 'text-rose-600',
-    borderColor: 'border-rose-100',
-    cta: 'Assess My Risk',
-  },
-  {
-    icon: CloudRain,
-    title: 'Weather Disease Alerts',
-    subtitle: 'Stay one step ahead',
-    description:
-      "Heading somewhere tropical? Check if current weather conditions put you at risk for dengue, malaria, or chikungunya -- before you pack your bags.",
-    link: '/weather',
-    lightColor: 'bg-amber-50',
-    textColor: 'text-amber-600',
-    borderColor: 'border-amber-100',
-    cta: 'Check Weather Risk',
-  },
-];
-
-const howItWorks = [
-  {
-    step: 1,
-    icon: Search,
-    title: 'Tell us how you feel',
-    description: 'Select symptoms, enter health data, or provide weather conditions for your area.',
-  },
-  {
-    step: 2,
-    icon: Brain,
-    title: 'AI does the heavy lifting',
-    description: 'Our ensemble ML models (Random Forest + Gradient Boosting) analyze your input in real time.',
-  },
-  {
-    step: 3,
-    icon: BarChart3,
-    title: 'Get clear, actionable results',
-    description: 'Receive predictions with confidence scores, risk factors, and personalized recommendations.',
-  },
-];
-
-const stats = [
-  { value: '41+', label: 'Diseases covered', icon: Activity },
-  { value: '130+', label: 'Symptoms recognized', icon: CheckCircle2 },
-  { value: '95%+', label: 'Model accuracy', icon: Sparkles },
-  { value: '<1s', label: 'Prediction speed', icon: Clock },
-];
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Stethoscope, HeartPulse, CloudRain, ArrowDown, ArrowRight } from 'lucide-react'
+import Reveal from '../components/Reveal'
 
 export default function Home() {
-  const greeting = getGreeting();
-
   return (
     <div>
-      <Helmet>
-        <title>Disease Prediction System — AI-Powered Disease Prediction</title>
-        <meta name="description" content="AI-powered health assistant: symptom checker, risk assessment, and weather-based disease alerts." />
-      </Helmet>
+      {/* Quiet hero */}
+      <section className="min-h-[90vh] flex flex-col items-center justify-center px-6 text-center relative">
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="font-display text-5xl sm:text-7xl md:text-[84px] text-ink-900 leading-[1.02] tracking-tight max-w-4xl"
+        >
+          Ask, gently.<br />
+          <span className="serif-italic text-sage-500">Listen, before you worry.</span>
+        </motion.h1>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iYSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoNDUpIj48cGF0aCBkPSJNLTEwIDMwaDYwdjJoLTYweiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg==')] opacity-50"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium mb-6">
-              <Activity className="h-4 w-4" aria-hidden="true" />
-              {greeting} -- let's check on your health
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-              Your health questions,
-              <br />
-              <span className="text-primary-200">answered by AI</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-primary-100 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Not sure what's going on with your body? Disease Prediction System helps you make sense
-              of symptoms, understand your risk factors, and stay informed about
-              weather-related diseases -- all in one place.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/symptoms" className="btn-primary flex items-center gap-2 text-lg px-8 py-4">
-                Check My Symptoms <ArrowRight className="h-5 w-5" aria-hidden="true" />
-              </Link>
-              <Link
-                to="/about"
-                className="px-8 py-4 rounded-xl font-semibold text-white border-2 border-white/30 hover:bg-white/10 transition-all duration-200"
-              >
-                How Does It Work?
-              </Link>
-            </div>
-            <p className="text-primary-200/60 text-sm mt-6">
-              Free to use. No sign-up required. For educational purposes only.
-            </p>
-          </div>
-        </div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="mt-9 max-w-lg text-ink-600 leading-relaxed"
+        >
+          Match your symptoms to 40 likely conditions, score your risk for diabetes, heart disease, and stroke,
+          and forecast mosquito-borne outbreaks in your area. Every result comes with the reasons behind it.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.1, delay: 0.7 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-ink-500"
+        >
+          <span className="text-[10px] uppercase tracking-[0.25em]">Scroll</span>
+          <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+        </motion.div>
       </section>
 
-      {/* Stats Bar */}
-      <section className="relative z-10 -mt-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <stat.icon className="h-5 w-5 text-primary-500 mx-auto mb-2" aria-hidden="true" />
-                  <div className="text-2xl font-extrabold text-gray-900">
-                    <StatCounter value={stat.value} />
+      {/* Three feature cards */}
+      <section className="max-w-6xl mx-auto px-6 sm:px-10 py-24 sm:py-28">
+        <Reveal>
+          <header className="mb-14 max-w-2xl">
+            <div className="kicker mb-3">Three quiet tools</div>
+            <h2 className="font-display text-4xl sm:text-5xl text-ink-900 leading-[1.05] tracking-tight">
+              The shape of the place.
+            </h2>
+            <p className="text-ink-600 mt-4 leading-relaxed">
+              No dashboards, no streaks, no notifications. Just three small rooms,
+              each one good at one thing.
+            </p>
+          </header>
+        </Reveal>
+
+        <div className="grid md:grid-cols-3 gap-5">
+          {FEATURES.map((f, i) => {
+            const tint = TINTS[f.tint]
+            return (
+              <Reveal key={f.to} delay={i * 0.08}>
+                <Link
+                  to={f.to}
+                  className={`group relative block rounded-xl p-7 sm:p-8 h-full border shadow-soft hover:-translate-y-0.5 hover:shadow-warm transition-all duration-300 ${tint.bg} ${tint.border} ${tint.borderHover}`}
+                >
+                  <div className="flex items-baseline justify-between mb-6">
+                    <div className={`w-11 h-11 rounded-full grid place-items-center border ${tint.iconBg} ${tint.iconBorder}`}>
+                      <f.icon className={`w-4.5 h-4.5 ${tint.iconColor}`} strokeWidth={1.7} />
+                    </div>
+                    <span className="font-mono text-[10px] tracking-widest text-ink-400">{`0${i + 1}`}</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+                  <h3 className="font-display text-2xl text-ink-900 leading-tight">{f.title}</h3>
+                  <p className={`serif-italic mt-1 mb-4 ${tint.italic}`}>{f.italic}</p>
+                  <p className="text-sm text-ink-700 leading-relaxed">{f.body}</p>
+                  <div className={`mt-7 pt-5 border-t flex items-center justify-between ${tint.rule}`}>
+                    <span className="font-mono text-[11px] tracking-wider text-ink-500">{f.stat}</span>
+                    <span className="text-sm text-ink-900 inline-flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
+                      Open <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              </Reveal>
+            )
+          })}
         </div>
       </section>
 
-      {/* Feature Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="text-center mb-16">
-          <h2 className="section-title">Three tools, one goal: your peace of mind</h2>
-          <p className="section-subtitle max-w-2xl mx-auto">
-            Each module tackles a different angle of health prediction, so you
-            get a fuller picture -- not just a single data point.
+      {/* Pull quote */}
+      <section className="max-w-4xl mx-auto px-6 sm:px-10 py-20 text-center">
+        <Reveal>
+          <p className="font-display text-3xl sm:text-4xl text-ink-900 leading-[1.2] tracking-tight">
+            Models should be{' '}
+            <span className="serif-italic text-sage-500">honest about what they know.</span>
+            {' '}So every prediction here ships with the features that drove it,
+            the confidence behind it, and a plain word for the risk band.
           </p>
-        </div>
-
-        {/* Disease Encyclopedia CTA */}
-        <div className="mb-8 text-center">
-          <Link to="/diseases" className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors">
-            <BookOpen className="h-4 w-4" aria-hidden="true" />
-            Browse all 41 diseases in our encyclopedia <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature) => (
-            <Link
-              key={feature.title}
-              to={feature.link}
-              className={`card block group hover:scale-[1.02] transition-transform duration-300 border-2 ${feature.borderColor} hover:shadow-lg h-full`}
-            >
-              <div className={`inline-flex p-3 rounded-xl ${feature.lightColor} mb-4`}>
-                <feature.icon className={`h-6 w-6 ${feature.textColor}`} />
-              </div>
-              <p className={`text-sm font-medium ${feature.textColor} mb-1`}>
-                {feature.subtitle}
-              </p>
-              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
-                {feature.title}
-              </h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-6">
-                {feature.description}
-              </p>
-              <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${feature.textColor} group-hover:gap-2.5 transition-all`}>
-                {feature.cta} <ArrowRight className="h-4 w-4" />
-              </span>
-            </Link>
-          ))}
-        </div>
+        </Reveal>
       </section>
 
-      {/* How It Works */}
-      <section className="bg-stone-50 border-y border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center mb-16">
-            <h2 className="section-title">How it works</h2>
-            <p className="section-subtitle">
-              Three simple steps. No account needed. Results in under a second.
+      {/* How it thinks */}
+      <section className="max-w-6xl mx-auto px-6 sm:px-10 py-20">
+        <Reveal>
+          <div className="grid md:grid-cols-2 gap-10 items-end mb-12">
+            <div>
+              <div className="kicker mb-3">How it thinks</div>
+              <h2 className="font-display text-4xl text-ink-900 leading-[1.05] tracking-tight">
+                Two small models,<br />
+                <span className="serif-italic text-sage-500">deciding together.</span>
+              </h2>
+            </div>
+            <p className="text-ink-700 leading-relaxed">
+              Each prediction is the soft vote of a Random Forest and a Gradient
+              Boosting classifier. Where they agree, confidence is high. Where they
+              hesitate, the interface tells you so, and suggests you ask a clinician.
             </p>
           </div>
+        </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {howItWorks.map((step, i) => (
-              <div key={step.step} className="relative text-center">
-                {i < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-primary-200 to-transparent" />
-                )}
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100 text-primary-600 mb-5 relative">
-                  <step.icon className="h-7 w-7" />
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-primary-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {step.step}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                  {step.description}
-                </p>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {STEPS.map((s, i) => (
+            <Reveal key={s.t} delay={i * 0.08}>
+              <div className="paper-card-soft p-7 h-full">
+                <div className="font-mono text-[10px] tracking-widest text-sage-500 mb-3">STEP {String(i + 1).padStart(2, '0')}</div>
+                <h3 className="font-display text-xl text-ink-900 mb-2">{s.t}</h3>
+                <p className="text-sm text-ink-700 leading-relaxed">{s.d}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust / Transparency */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="text-center mb-16">
-          <h2 className="section-title">Built with care, powered by science</h2>
-          <p className="section-subtitle max-w-2xl mx-auto">
-            We believe health tools should be transparent. Here's what's under the hood.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {[
-            {
-              icon: Brain,
-              title: 'Explainable predictions',
-              description: 'Every prediction comes with a confidence score and matching symptoms, so you know exactly why the AI reached its conclusion.',
-            },
-            {
-              icon: Shield,
-              title: 'Your privacy matters',
-              description: "Nothing is stored. Your health data stays in your browser and is sent to the AI only for the instant it takes to generate a prediction.",
-            },
-            {
-              icon: Zap,
-              title: 'Ensemble ML for accuracy',
-              description: 'We combine Random Forest and Gradient Boosting models, then weight their predictions to minimize false positives and missed conditions.',
-            },
-            {
-              icon: Users,
-              title: 'Open source and auditable',
-              description: 'Every line of code, training script, and model weight is open source. You can inspect, modify, or contribute to the project.',
-            },
-          ].map((h) => (
-            <div key={h.title} className="card flex items-start gap-4">
-              <div className="inline-flex p-3 bg-primary-50 rounded-xl shrink-0">
-                <h.icon className="h-6 w-6 text-primary-600" aria-hidden="true" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{h.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{h.description}</p>
-              </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-gradient-to-r from-primary-600 to-accent-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Curious about your health?
+      {/* Numbers */}
+      <section className="max-w-6xl mx-auto px-6 sm:px-10 py-20">
+        <Reveal>
+          <div className="kicker mb-3">By the numbers</div>
+          <h2 className="font-display text-4xl text-ink-900 mb-12 max-w-xl leading-[1.05] tracking-tight">
+            What the models have actually learned.
           </h2>
-          <p className="text-primary-100 text-lg mb-8 max-w-xl mx-auto">
-            It takes less than 30 seconds. Pick your symptoms, enter a few numbers,
-            or check the weather -- and let the AI do the rest.
-          </p>
-          <Link to="/symptoms" className="inline-flex items-center gap-2 bg-white text-primary-700 px-8 py-4 rounded-xl font-bold hover:bg-primary-50 transition-colors text-lg shadow-lg hover:shadow-xl">
-            Get Started -- It's Free <ArrowRight className="h-5 w-5" />
-          </Link>
+        </Reveal>
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {NUMBERS.map((n, i) => (
+            <Reveal key={n.k} delay={i * 0.06}>
+              <div className="border-t-2 border-ink-900 pt-4">
+                <div className="font-display text-5xl text-ink-900 leading-none">{n.v}</div>
+                <div className="text-xs uppercase tracking-widest text-ink-500 mt-3">{n.k}</div>
+                {n.note && <div className="text-xs text-ink-500 mt-1 serif-italic">{n.note}</div>}
+              </div>
+            </Reveal>
+          ))}
         </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="max-w-3xl mx-auto px-6 sm:px-10 py-24 text-center">
+        <Reveal>
+          <h2 className="font-display text-4xl sm:text-5xl text-ink-900 leading-[1.05] tracking-tight">
+            When you have a moment,<br />
+            <span className="serif-italic text-sage-500">start somewhere small.</span>
+          </h2>
+          <div className="mt-9 flex items-center justify-center gap-4 flex-wrap">
+            <Link to="/symptoms" className="btn-primary">
+              Begin a symptom check <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link to="/outbreak" className="btn-link">
+              or look at outbreak risk
+            </Link>
+          </div>
+        </Reveal>
       </section>
     </div>
-  );
+  )
 }
+
+const FEATURES = [
+  {
+    to: '/symptoms',
+    icon: Stethoscope,
+    title: 'Symptom Checker',
+    italic: 'a careful first read',
+    body: 'Tell it what you feel, in plain words. It ranks the conditions that fit best, and shows which of your symptoms each one explains.',
+    stat: '40 conditions',
+    tint: 'navy',
+  },
+  {
+    to: '/risk/diabetes',
+    icon: HeartPulse,
+    title: 'Risk Assessments',
+    italic: 'three questions worth asking',
+    body: 'For diabetes, heart disease, and stroke, it returns a calibrated probability and the readings that pushed it up or down.',
+    stat: '3 conditions',
+    tint: 'rust',
+  },
+  {
+    to: '/outbreak',
+    icon: CloudRain,
+    title: 'Outbreak Predictor',
+    italic: 'weather, made local',
+    body: 'For mosquito-borne disease, it reads temperature, humidity, and recent rainfall, then tells you whether this week looks risky for your area.',
+    stat: '3 vectors',
+    tint: 'oat',
+  },
+]
+
+const TINTS = {
+  navy: {
+    bg:          'bg-sage-50',
+    border:      'border-sage-100',
+    borderHover: 'hover:border-sage-300',
+    iconBg:      'bg-white',
+    iconBorder:  'border-sage-100',
+    iconColor:   'text-sage-500',
+    italic:      'text-sage-500',
+    rule:        'border-sage-100',
+  },
+  rust: {
+    bg:          'bg-clay-50',
+    border:      'border-clay-100',
+    borderHover: 'hover:border-clay-300',
+    iconBg:      'bg-white',
+    iconBorder:  'border-clay-100',
+    iconColor:   'text-clay-500',
+    italic:      'text-clay-500',
+    rule:        'border-clay-100',
+  },
+  oat: {
+    bg:          'bg-paper-200',
+    border:      'border-paper-300',
+    borderHover: 'hover:border-ink-300',
+    iconBg:      'bg-white',
+    iconBorder:  'border-paper-300',
+    iconColor:   'text-ink-700',
+    italic:      'text-ink-700',
+    rule:        'border-paper-300',
+  },
+}
+
+const STEPS = [
+  { t: 'You describe',    d: 'Forms ask for symptoms, vital readings, or local weather. Nothing is required, nothing is tracked.' },
+  { t: 'Two models vote', d: 'A Random Forest and a Gradient Boosting classifier each produce a probability. The interface averages them, softly.' },
+  { t: 'Reasons appear',  d: 'You see the top features that drove the call, the confidence behind it, and a plain word for the risk band.' },
+]
+
+const NUMBERS = [
+  { v: '40',     k: 'Conditions',       note: 'across the symptom model' },
+  { v: '125',    k: 'Symptoms covered', note: 'searchable, in plain words' },
+  { v: '5',      k: 'Trained models',   note: 'each an ensemble of two' },
+  { v: '<150ms', k: 'Median latency',   note: 'on a warm Space' },
+]

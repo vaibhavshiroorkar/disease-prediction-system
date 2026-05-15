@@ -1,43 +1,41 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 *.egg-info/
-dist/
-build/
 .eggs/
 *.egg
 .venv/
 venv/
 env/
-*.pkl
-*.joblib
 
-# Environment
+# Node
+node_modules/
+dist/
+.vite/
+
+# Env
 .env
 .env.local
+.env.*.local
+!.env.example
 
-# IDE
+# Editor / OS
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Node
-node_modules/
-frontend/node_modules/
-frontend/dist/
-
-# ML artifacts
-ml/models/*.pkl
-ml/models/*.joblib
-ml/data/*.csv
-!ml/data/.gitkeep
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
+
+# ML training artefacts (regenerable from ml/scripts/)
+ml/models/*.joblib
+ml/models/summary.json
+ml/data/*.csv
+ml/data/*.json
+
+# Backend model bundle is committed for HF Spaces deploys.
+# If you prefer to upload it via Git LFS or a release artefact, uncomment:
+# backend/models/
+# backend/data/

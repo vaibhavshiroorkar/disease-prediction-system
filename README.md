@@ -1,238 +1,97 @@
-# Disease Prediction System
+# Aetheris
 
-A full-stack ML application for symptom checking, chronic disease risk assessment, and weather-driven outbreak alerts. Built to explore what it actually takes to bring machine learning into a healthcare context — not just the modelling, but the whole thing: a fast API, a UI someone would actually use, and predictions that explain themselves.
+A small workspace for asking calm questions about your health.
 
-It won't replace your doctor. But it might help you ask better questions.
+It does three things: a symptom checker, a few risk calculators (diabetes, heart, stroke), and a weather-driven outbreak forecaster for mosquito-borne disease. Each prediction comes with the reasons behind it.
 
-Try it out at **[diseasepredictionsystem.vercel.app](https://diseasepredictionsystem.vercel.app)**
+It is not a doctor. It is a quieter first step.
 
-> The backend runs on Render's free tier, so the first request after inactivity can take 30–60 seconds to respond.
+## The pieces
 
----
+- `frontend/` &nbsp; the website. Vite, React, Tailwind. Lives on Vercel.
+- `backend/` &nbsp; the inference API. FastAPI on Python. Lives on a HuggingFace Space.
+- `ml/` &nbsp; training scripts. Run once, locally, to bake the .joblib models the API serves.
+- `supabase/` &nbsp; one SQL file. Run it in your Supabase project to set up auth and history.
 
-## What it does
+## Running it locally
 
-### Symptom checker
-
-Pick from 130+ symptoms and the system runs them through a Random Forest + Gradient Boosting ensemble trained across 41 diseases. You get a ranked list of probable conditions with confidence percentages, which of your symptoms matched each one, and a plain-English description of the condition.
-
-Test accuracy: **97.2%** (cross-validated at 97.1%).
-
-### Health risk assessment
-
-Three separate models for Type 2 diabetes, heart disease, and stroke. Fill in a short form with clinical measurements and get a risk level (Low / Moderate / High), the specific factors driving your score, and recommendations.
-
-| Condition | Accuracy | AUC |
-|---|---|---|
-| Type 2 Diabetes | 90.5% | 0.96 |
-| Heart Disease | 88.8% | 0.96 |
-| Stroke | 94.7% | 0.98 |
-
-### Weather disease alerts
-
-Dengue, malaria, and chikungunya follow environmental patterns closely. Enter your temperature, humidity, rainfall, month, and region type — the system predicts outbreak risk using a multi-output classifier trained on those correlations. Also surfaces prevention tips and seasonal context.
-
-Accuracy across the three diseases: **93–95%**.
-
----
-
-## Architecture
-
-```
-                         ┌──────────────────────────────────┐
-                         │       React + TailwindCSS        │
-                         │                                  │
-                         │  Symptom    Health     Weather   │
-                         │  Checker    Risk       Alerts    │
-                         └──────┬────────┬──────────┬───────┘
-                                │        │          │
-                           ─────┼────────┼──────────┼───── REST API (JSON)
-                                │        │          │
-                         ┌──────┴────────┴──────────┴───────┐
-                         │         FastAPI Backend          │
-                         │                                  │
-                         │  ┌──────┐  ┌───────┐  ┌───────┐ │
-                         │  │ RF+GB│  │RF+GB  │  │Multi- │ │
-                         │  │Ensem.│  │  x 3  │  │Output │ │
-                         │  │      │  │Models │  │  RF   │ │
-                         │  └──────┘  └───────┘  └───────┘ │
-                         │     ▲          ▲          ▲      │
-                         └─────┼──────────┼──────────┼──────┘
-                               │          │          │
-                         ┌─────┴──────────┴──────────┴──────┐
-                         │    Trained Model Artifacts (.pkl) │
-                         │     (baked into Docker image)     │
-                         └──────────────────────────────────┘
-```
-
-The frontend (Vercel) hits the FastAPI backend (Render) over HTTPS. Models are trained as part of the Docker build so no separate storage is needed. Prediction logs are written to Supabase as a background task — never touching response latency.
-
----
-
-## Running locally
-
-### Requirements
-
-- Python 3.11+
-- Node.js 18+
-
-### Clone and train the models
+You need Python 3.11+ and Node 18+.
 
 ```bash
-git clone https://github.com/vaibhavshiroorkar/disease-prediction-system.git
-cd disease-prediction-system
-
+# 1. Train the models, once
 cd ml
 pip install -r requirements.txt
-python train_symptom_model.py   # ~10s
-python train_risk_model.py      # ~8s
-python train_weather_model.py   # ~6s
-cd ..
-```
+python scripts/generate_data.py
+python scripts/train_all.py
 
-Each script prints accuracy and cross-validation scores as it runs.
-
-### Backend
-
-```bash
-cd backend
+# 2. Move them into the API and start it
+cp -r models data ../backend/
+cd ../backend
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
+uvicorn app.main:app --port 7860
 
-Swagger docs at `http://localhost:8000/docs`.
-
-### Frontend
-
-```bash
-cd frontend
+# 3. Start the frontend
+cd ../frontend
+cp .env.example .env       # leave Supabase blank to run in demo mode
 npm install
 npm run dev
 ```
 
-App at `http://localhost:5173`.
+Open `localhost:5173` and that's the whole thing.
 
-### Docker
+## What I'll need from you to ship it
 
-```bash
-docker-compose up --build
+Four accounts. All free tiers are fine.
+
+### 1. Supabase (database + auth)
+
+1. Create a project at supabase.com.
+2. Open the SQL editor. Paste in `supabase/schema.sql` and run it.
+3. **Project Settings → API**, grab two values:
+   - Project URL `→ VITE_SUPABASE_URL`
+   - `anon` `public` key `→ VITE_SUPABASE_ANON_KEY`
+4. **Authentication → URL Configuration**: add your Vercel domain to the allow list.
+5. (Optional) **Authentication → Providers → Google**: paste in a Google OAuth client ID if you want one-tap sign-in.
+
+If you skip Supabase entirely, the app runs in demo mode. Predictions still work, but history and accounts are off.
+
+### 2. HuggingFace (inference API)
+
+1. New Space, **SDK = Docker**, name it whatever you like.
+2. Clone the Space's git repo locally.
+3. Copy everything in `backend/` into it (including the populated `models/` and `data/` folders), then push.
+4. The first build takes a few minutes. After that, your endpoint is `https://<user>-<space>.hf.space`.
+5. That's your `VITE_ML_API_URL`.
+
+If you want zero cold starts, Render or Railway both work for ~$5/month with the same `backend/Dockerfile`. HuggingFace is free but sleeps after a while.
+
+### 3. Vercel (frontend)
+
+1. Import the repo, set **root directory** to `frontend/`.
+2. Set three environment variables:
+   - `VITE_ML_API_URL` from step 2
+   - `VITE_SUPABASE_URL` from step 1
+   - `VITE_SUPABASE_ANON_KEY` from step 1
+3. Deploy.
+
+### 4. The .env file (local dev)
+
+Inside `frontend/`, your `.env` should look like:
+
+```
+VITE_ML_API_URL=http://127.0.0.1:7860
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Backend on :8000, frontend on :5173.
+For demo mode just leave the Supabase lines blank.
 
----
+## A small note on the models
 
-## Deployment
+Each prediction is a soft vote between a Random Forest and a Gradient Boosting classifier. They were trained on synthetic data shaped after the Pima diabetes set, the Cleveland heart set, the Kaggle stroke set, and a curated symptom-disease table. They are good for learning, demos, and intuition. They are not clinical-grade and they should never be the last word.
 
-| Service | Role |
-|---|---|
-| Vercel | React frontend |
-| Render | FastAPI backend (Docker) |
-| Supabase | Prediction logs (PostgreSQL) |
-
-The backend Dockerfile trains all models during the image build, so the deployed container is self-contained. See [render.yaml](render.yaml) for the Render config and [supabase/schema.sql](supabase/schema.sql) for the DB schema.
-
----
-
-## Project layout
-
-```
-disease-prediction-system/
-│
-├── ml/
-│   ├── train_symptom_model.py       # 41-class RF + Gradient Boosting ensemble
-│   ├── train_risk_model.py          # Binary classifiers for 3 chronic conditions
-│   ├── train_weather_model.py       # Multi-output RF for outbreak risk
-│   └── models/                      # .pkl files — generated at train time
-│
-├── backend/
-│   ├── app/
-│   │   ├── main.py                  # Entry point, CORS, router registration
-│   │   ├── config.py                # Settings, paths, env vars
-│   │   ├── schemas.py               # Pydantic request/response models
-│   │   ├── routers/                 # One file per feature domain
-│   │   └── services/                # ML loading, inference, Supabase logging
-│   └── Dockerfile
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/                   # SymptomChecker, RiskAssessment, WeatherAlerts, About
-│   │   ├── components/layout/       # Navbar, Footer, Layout wrapper
-│   │   └── api/axios.js             # Centralized API client
-│   └── vercel.json
-│
-├── supabase/schema.sql
-├── render.yaml
-└── docker-compose.yml
-```
-
----
-
-## API
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/api/predict/symptoms` | POST | Ranked disease predictions from symptoms |
-| `/api/predict/metadata` | GET | All available symptoms, diseases, model info |
-| `/api/risk/diabetes` | POST | Type 2 diabetes risk score |
-| `/api/risk/heart` | POST | Heart disease risk score |
-| `/api/risk/stroke` | POST | Stroke risk score |
-| `/api/weather/risk` | POST | Outbreak risk from weather + region |
-| `/api/weather/regions` | GET | Supported region types |
-| `/health` | GET | Health check |
-
-**Example:**
-
-```json
-POST /api/predict/symptoms
-{ "symptoms": ["high_fever", "severe_headache", "joint_pain", "rash"] }
-
-{
-  "predictions": [
-    {
-      "disease": "Dengue",
-      "confidence": 0.5141,
-      "matching_symptoms": ["high_fever", "severe_headache", "joint_pain", "rash"],
-      "description": "A mosquito-borne tropical disease caused by the dengue virus."
-    }
-  ],
-  "model_used": "Random Forest + Gradient Boosting Ensemble",
-  "model_accuracy": 0.9722
-}
-```
-
----
-
-## Stack
-
-**Frontend** — React 18, TailwindCSS, Framer Motion, Recharts, React Select
-
-**Backend** — FastAPI, Pydantic, Uvicorn
-
-**ML** — scikit-learn, NumPy, Pandas
-
-**Infra** — Docker, Render, Vercel, Supabase
-
----
-
-## What I actually learned
-
-Not the polished version:
-
-- Ensemble models are genuinely better than solo classifiers, but the gains plateau quickly. Most of the accuracy improvement came from dataset design, not algorithm choice.
-- Synthetic datasets let you control class balance and noise perfectly — but you're essentially training a model to learn the rules you wrote. Real clinical data is messier and more interesting.
-- FastAPI background tasks are underrated. Logging to Supabase without touching response latency was a small but satisfying win.
-- `VITE_*` env vars are baked in at build time. Updating them in the host dashboard does nothing until you redeploy. Learned that the hard way.
-- Docker build context matters more than you'd think. Sharing model artifacts between a training directory and a serving app in a single image requires a root-level build context.
-
----
-
-## Disclaimer
-
-Educational project. The predictions are not medically validated and should never replace professional medical judgment. Models were trained on synthetic data. If you're unwell, see a doctor.
-
----
+The training pipeline is reproducible. Run `python scripts/train_all.py` and you get a `summary.json` with the test metrics next to the saved models.
 
 ## License
 
-MIT
+MIT.
